@@ -75,14 +75,16 @@ def delete_shortcut(shortcut_id: UUID, db: Session = Depends(get_db)):
     return {"message": "Shortcut deleted"}
 
 
-# Search and filter with AND/OR for tags
+# Search and filter with multiple apps, OSes, AND/OR for tags
 @router.get("/shortcuts/search", response_model=List[ShortcutOut])
 def search_shortcuts(
     name: Optional[str] = None,
-    app: Optional[str] = None,
-    os: Optional[str] = None,
-    tags: Optional[List[str]] = Query(None),
-    tags_logic: str = Query("OR", regex="^(OR|AND)$"),  # new param for AND/OR
+    apps: Optional[List[str]] = Query(None, description="Filter by multiple apps"),
+    oses: Optional[List[str]] = Query(None, description="Filter by multiple OSes"),
+    tags: Optional[List[str]] = Query(None, description="Filter by tags"),
+    tags_logic: str = Query(
+        "OR", regex="^(OR|AND)$", description="Tags filter logic: OR or AND"
+    ),
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -91,10 +93,12 @@ def search_shortcuts(
 
     if name:
         query = query.filter(Shortcut.name.ilike(f"%{name}%"))
-    if app:
-        query = query.filter(Shortcut.app.ilike(f"%{app}%"))
-    if os:
-        query = query.filter(Shortcut.os.ilike(f"%{os}%"))
+
+    if apps:
+        query = query.filter(Shortcut.app.in_(apps))  # any app in the list
+
+    if oses:
+        query = query.filter(Shortcut.os.in_(oses))  # any OS in the list
 
     if tags:
         if tags_logic.upper() == "OR":
