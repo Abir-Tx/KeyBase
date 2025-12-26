@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:16
+    environment:
+      POSTGRES_USER: abir
+      POSTGRES_PASSWORD: SECRET
+      POSTGRES_DB: defaultdb
+      PGDATA: /data/postgres
+    volumes:
+      - /home/abir/database_data/postgresql/data:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - keybase-net
+    restart: unless-stopped
+
+  backend:
+    container_name: keybase-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_USER: abir
+      POSTGRES_PASSWORD: SECRET
+      POSTGRES_DB: defaultdb
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      DATABASE_URL: postgresql+psycopg2://abir:SECRET@postgres:5432/defaultdb
+    ports:
+      - "8000:8000"
+    networks:
+      - keybase-net
+    restart: unless-stopped
+
+networks:
+  keybase-net:
+    driver: bridge
