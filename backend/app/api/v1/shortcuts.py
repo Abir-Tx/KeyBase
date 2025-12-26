@@ -75,13 +75,14 @@ def delete_shortcut(shortcut_id: UUID, db: Session = Depends(get_db)):
     return {"message": "Shortcut deleted"}
 
 
-# Search and filter
+# Search and filter with AND/OR for tags
 @router.get("/shortcuts/search", response_model=List[ShortcutOut])
 def search_shortcuts(
     name: Optional[str] = None,
     app: Optional[str] = None,
     os: Optional[str] = None,
     tags: Optional[List[str]] = Query(None),
+    tags_logic: str = Query("OR", regex="^(OR|AND)$"),  # new param for AND/OR
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -94,8 +95,15 @@ def search_shortcuts(
         query = query.filter(Shortcut.app.ilike(f"%{app}%"))
     if os:
         query = query.filter(Shortcut.os.ilike(f"%{os}%"))
+
     if tags:
-        query = query.filter(Shortcut.tags.overlap(tags))  # Postgres array overlap
+        if tags_logic.upper() == "OR":
+            query = query.filter(Shortcut.tags.overlap(tags))  # any tag matches
+        else:  # AND
+            for tag in tags:
+                query = query.filter(
+                    Shortcut.tags.contains([tag])
+                )  # all tags must exist
 
     query = query.order_by(Shortcut.created_at.desc())
     return query.offset(offset).limit(limit).all()
