@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from uuid import UUID
 from datetime import datetime
+from typing import List, Optional
 
 from app.db.session import SessionLocal
 from app.db.models import Shortcut
@@ -72,3 +73,29 @@ def delete_shortcut(shortcut_id: UUID, db: Session = Depends(get_db)):
     db.delete(shortcut)
     db.commit()
     return {"message": "Shortcut deleted"}
+
+
+# Search and filter
+@router.get("/shortcuts/search", response_model=List[ShortcutOut])
+def search_shortcuts(
+    name: Optional[str] = None,
+    app: Optional[str] = None,
+    os: Optional[str] = None,
+    tags: Optional[List[str]] = Query(None),
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+):
+    query = db.query(Shortcut)
+
+    if name:
+        query = query.filter(Shortcut.name.ilike(f"%{name}%"))
+    if app:
+        query = query.filter(Shortcut.app.ilike(f"%{app}%"))
+    if os:
+        query = query.filter(Shortcut.os.ilike(f"%{os}%"))
+    if tags:
+        query = query.filter(Shortcut.tags.overlap(tags))  # Postgres array overlap
+
+    query = query.order_by(Shortcut.created_at.desc())
+    return query.offset(offset).limit(limit).all()
