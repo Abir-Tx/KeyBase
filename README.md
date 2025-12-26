@@ -17,3 +17,13 @@ Shortcut {
   updated_at: datetime
 }
 ```
+
+## `.env` File
+
+### For Backend
+
+Create a `.env` file in the `backend/` directory with the following variables:
+
+```
+DATABASE_URL=postgresql://username:password@db-address:PORT/DBNAME
+```
