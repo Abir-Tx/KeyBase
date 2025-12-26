@@ -205,3 +205,35 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+
+# Backend Specifics
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/.venv/
+backend/venv/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+
+# Node (Frontend)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.DS_Store
+frontend/*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
