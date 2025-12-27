@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 type ShortcutRecorderProps = {
   initialKeys?: string[];
@@ -11,7 +12,7 @@ type ShortcutRecorderProps = {
 export default function ShortcutRecorder({
   initialKeys = [],
   onSave,
-  delay = 200, // default 200ms between keys
+  delay = 200,
 }: ShortcutRecorderProps) {
   const [keys, setKeys] = React.useState<string[]>(initialKeys);
   const [recording, setRecording] = React.useState(false);
@@ -24,13 +25,11 @@ export default function ShortcutRecorder({
       e.preventDefault();
       const key = e.key === " " ? "Space" : e.key;
 
-      // Avoid duplicates
       setKeys((prev) => {
         if (prev.includes(key)) return prev;
         return [...prev, key];
       });
 
-      // Reset after delay
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
         setRecording(false);
@@ -56,22 +55,28 @@ export default function ShortcutRecorder({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Key display */}
+      {/* Key display with animation */}
       <div className="flex flex-wrap gap-2 min-h-[2rem]">
-        {keys.length > 0 ? (
-          keys.map((k, idx) => (
-            <kbd
-              key={idx}
-              className="px-3 py-1 font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg shadow-sm"
-            >
-              {k}
-            </kbd>
-          ))
-        ) : (
-          <span className="text-gray-500 dark:text-gray-400 text-sm">
-            Press keys...
-          </span>
-        )}
+        <AnimatePresence>
+          {keys.length > 0 ? (
+            keys.map((k, idx) => (
+              <motion.kbd
+                key={k}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                className="px-3 py-1 font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg shadow-sm"
+              >
+                {k}
+              </motion.kbd>
+            ))
+          ) : (
+            <span className="text-gray-500 dark:text-gray-400 text-sm">
+              Press keys...
+            </span>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Buttons */}
