@@ -76,7 +76,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Search bar */}
+      {/* Search */}
       <div className="w-full max-w-4xl mx-auto">
         <input
           type="text"
@@ -87,7 +87,7 @@ export default function Home() {
         />
       </div>
 
-      {/* Add shortcut button */}
+      {/* Add button */}
       <div className="w-full max-w-4xl mx-auto flex justify-end">
         <button
           onClick={() => setModalOpen(true)}
@@ -97,7 +97,7 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Shortcuts list */}
+      {/* Shortcut cards */}
       <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
         {loading ? (
           <p className="text-gray-600 dark:text-gray-300">
@@ -110,12 +110,14 @@ export default function Home() {
         ) : (
           Object.keys(groupedShortcuts).map((app) => (
             <div key={app}>
-              <h2 className="text-2xl font-bold mb-3">{app}</h2>
+              <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-gray-100">
+                {app}
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {groupedShortcuts[app].map((sc) => (
                   <div
                     key={sc.id}
-                    className="flex flex-col p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shadow hover:shadow-lg transition"
+                    className="flex flex-col p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-r from-white via-gray-50 to-white dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 shadow hover:shadow-xl transition"
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -131,12 +133,13 @@ export default function Home() {
                         Edit
                       </button>
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300 mb-2">
+
+                    <p className="text-gray-700 dark:text-gray-300 mb-3">
                       {sc.description}
                     </p>
 
                     {/* Keys */}
-                    <div className="flex flex-wrap gap-2 mb-2">
+                    <div className="flex flex-wrap gap-2 mb-3">
                       {sc.keys.map((k, idx) => (
                         <span
                           key={idx}
