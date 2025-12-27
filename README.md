@@ -40,6 +40,14 @@ make run
 
 This will start the FastAPI server on `http://localhost:8000`.
 
+### Frontend
+
+To run the frontend development server, navigate to the `frontend/` directory and execute:
+
+```bash
+make dev
+```
+
 ## Technical Specs
 
 ### Backend
