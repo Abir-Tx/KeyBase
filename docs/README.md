@@ -28,6 +28,14 @@ Create a `.env` file in the `backend/` directory with the following variables:
 DATABASE_URL=postgresql://username:password@db-address:PORT/DBNAME
 ```
 
+### For Frontend
+
+Create a `.env` file in the `frontend/` directory with the following variables:
+
+```
+NEXT_PUBLIC_API_BASE=http://localhost:8000
+```
+
 ## Usage
 
 ### Backend
