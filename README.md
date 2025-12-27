@@ -50,3 +50,14 @@ This will start the FastAPI server on `http://localhost:8000`.
 
 - Node version: 24.3.0
 - NPX Version: 11.6.0
+
+#### Command Used to Create React App
+
+```bash
+npx create-next-app@latest frontend \
+  --typescript \
+  --tailwind \
+  --app \
+  --src-dir \
+  --eslint
+```
