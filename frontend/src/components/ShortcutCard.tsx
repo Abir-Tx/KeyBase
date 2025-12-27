@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Shortcut } from "@/lib/api";
+import { motion } from "framer-motion";
 
 type ShortcutCardProps = {
   shortcut: Shortcut;
@@ -10,7 +11,12 @@ type ShortcutCardProps = {
 
 export default function ShortcutCard({ shortcut, onEdit }: ShortcutCardProps) {
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-300 hover:shadow-lg">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-shadow duration-300"
+    >
       {/* Info Section */}
       <div className="flex flex-col gap-2 flex-1">
         <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
@@ -28,7 +34,7 @@ export default function ShortcutCard({ shortcut, onEdit }: ShortcutCardProps) {
             {shortcut.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-100"
+                className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-100 transition-colors duration-300"
               >
                 {tag}
               </span>
@@ -44,7 +50,7 @@ export default function ShortcutCard({ shortcut, onEdit }: ShortcutCardProps) {
           {shortcut.keys?.map((key, idx) => (
             <kbd
               key={idx}
-              className="px-3 py-1 font-mono text-sm bg-gray-200 dark:bg-gray-700 rounded shadow-sm"
+              className="px-3 py-1 font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg shadow-sm transition-colors duration-300"
             >
               {key}
             </kbd>
@@ -54,11 +60,11 @@ export default function ShortcutCard({ shortcut, onEdit }: ShortcutCardProps) {
         {/* Edit Button */}
         <button
           onClick={() => onEdit(shortcut)}
-          className="px-4 py-1 rounded-md bg-yellow-500 hover:bg-yellow-600 text-white text-sm transition shadow mt-2 md:mt-0"
+          className="px-4 py-1 rounded-md bg-yellow-500 hover:bg-yellow-600 text-white text-sm transition-colors shadow mt-2 md:mt-0"
         >
           Edit
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }
