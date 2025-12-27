@@ -1,5 +1,10 @@
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import ClientLayout from "@/components/ClientLayout";
+
+export const metadata = {
+  title: "KeyBase",
+  description: "Shortcut management app",
+};
 
 export default function RootLayout({
   children,
@@ -7,9 +12,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="scroll-smooth">
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
