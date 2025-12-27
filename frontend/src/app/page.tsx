@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import AddEditShortcutModal from "@/components/AddEditShortcutModal";
+import RecordKeysModal from "@/components/RecordKeysModal";
 import {
   fetchShortcuts,
   addShortcut,
@@ -9,17 +10,23 @@ import {
   Shortcut,
 } from "@/lib/api";
 import ShortcutCard from "@/components/ShortcutCard";
-import ShortcutRecorder from "@/components/ShortcutRecorder";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [shortcuts, setShortcuts] = React.useState<Shortcut[]>([]);
-  const [modalOpen, setModalOpen] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+
+  // Modals
   const [editingShortcut, setEditingShortcut] = React.useState<Shortcut | null>(
     null
   );
-  const [loading, setLoading] = React.useState(true);
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [recordShortcut, setRecordShortcut] = React.useState<Shortcut | null>(
+    null
+  );
+  const [recordModalOpen, setRecordModalOpen] = React.useState(false);
 
+  // Load shortcuts
   React.useEffect(() => {
     const loadData = async () => {
       try {
@@ -34,6 +41,7 @@ export default function Home() {
     loadData();
   }, []);
 
+  // Handle add/edit full details
   const handleSave = async (sc: Shortcut) => {
     try {
       const payload: Shortcut = {
@@ -60,11 +68,31 @@ export default function Home() {
     }
   };
 
+  // Handle keys recording save
+  const handleRecordKeysSave = async (keys: string[]) => {
+    if (!recordShortcut) return;
+    try {
+      const updated = await updateShortcut({
+        ...recordShortcut,
+        keys,
+      });
+      setShortcuts((prev) =>
+        prev.map((s) => (s.id === updated.id ? updated : s))
+      );
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRecordShortcut(null);
+      setRecordModalOpen(false);
+    }
+  };
+
+  // Filter & group
   const filteredShortcuts = shortcuts.filter(
     (sc) =>
       sc.app.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sc.keys.some((k) => k.toLowerCase().includes(searchQuery.toLowerCase()))
+      sc.keys?.some((k) => k.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const groupedShortcuts = filteredShortcuts.reduce(
@@ -77,7 +105,7 @@ export default function Home() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 px-4 md:px-0">
       {/* Search */}
       <div className="w-full max-w-4xl mx-auto">
         <input
@@ -92,7 +120,10 @@ export default function Home() {
       {/* Add button */}
       <div className="w-full max-w-4xl mx-auto flex justify-end">
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={() => {
+            setEditingShortcut(null);
+            setModalOpen(true);
+          }}
           className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition shadow"
         >
           + Add New Shortcut
@@ -100,7 +131,7 @@ export default function Home() {
       </div>
 
       {/* Shortcut cards */}
-      <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
+      <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
         {loading ? (
           <p className="text-gray-600 dark:text-gray-300">
             Loading shortcuts...
@@ -115,14 +146,18 @@ export default function Home() {
               <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-gray-100">
                 {app}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-wrap gap-4">
                 {groupedShortcuts[app].map((sc) => (
                   <ShortcutCard
                     key={sc.id}
                     shortcut={sc}
-                    onEdit={(shortcut) => {
-                      setEditingShortcut(shortcut);
+                    onEditDetails={(sc) => {
+                      setEditingShortcut(sc);
                       setModalOpen(true);
+                    }}
+                    onRecordKeys={(sc) => {
+                      setRecordShortcut(sc);
+                      setRecordModalOpen(true);
                     }}
                   />
                 ))}
@@ -132,6 +167,7 @@ export default function Home() {
         )}
       </div>
 
+      {/* Modals */}
       {modalOpen && (
         <AddEditShortcutModal
           shortcut={editingShortcut}
@@ -143,10 +179,13 @@ export default function Home() {
         />
       )}
 
-      <ShortcutRecorder
-        initialKeys={[]} // no keys yet
-        onSave={(keys) => console.log("Captured keys:", keys)}
-      />
+      {recordModalOpen && recordShortcut && (
+        <RecordKeysModal
+          shortcut={recordShortcut}
+          onClose={() => setRecordModalOpen(false)}
+          onSave={handleRecordKeysSave}
+        />
+      )}
     </div>
   );
 }
