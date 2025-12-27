@@ -9,6 +9,7 @@ import {
   Shortcut,
 } from "@/lib/api";
 import ShortcutCard from "@/components/ShortcutCard";
+import ShortcutRecorder from "@/components/ShortcutRecorder";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -141,6 +142,11 @@ export default function Home() {
           onSave={handleSave}
         />
       )}
+
+      <ShortcutRecorder
+        initialKeys={[]} // no keys yet
+        onSave={(keys) => console.log("Captured keys:", keys)}
+      />
     </div>
   );
 }
