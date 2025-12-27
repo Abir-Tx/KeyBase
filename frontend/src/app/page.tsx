@@ -8,6 +8,7 @@ import {
   updateShortcut,
   Shortcut,
 } from "@/lib/api";
+import ShortcutCard from "@/components/ShortcutCard";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -115,55 +116,14 @@ export default function Home() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {groupedShortcuts[app].map((sc) => (
-                  <div
+                  <ShortcutCard
                     key={sc.id}
-                    className="flex flex-col p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-r from-white via-gray-50 to-white dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 shadow hover:shadow-xl transition"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        {sc.name || sc.app}
-                      </h3>
-                      <button
-                        onClick={() => {
-                          setEditingShortcut(sc);
-                          setModalOpen(true);
-                        }}
-                        className="px-3 py-1 text-sm rounded bg-yellow-500 hover:bg-yellow-600 text-white transition"
-                      >
-                        Edit
-                      </button>
-                    </div>
-
-                    <p className="text-gray-700 dark:text-gray-300 mb-3">
-                      {sc.description}
-                    </p>
-
-                    {/* Keys */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {sc.keys.map((k, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-100 text-sm font-mono"
-                        >
-                          {k}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Tags */}
-                    {sc.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {sc.tags.map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-100 text-xs font-medium"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    shortcut={sc}
+                    onEdit={(shortcut) => {
+                      setEditingShortcut(shortcut);
+                      setModalOpen(true);
+                    }}
+                  />
                 ))}
               </div>
             </div>
