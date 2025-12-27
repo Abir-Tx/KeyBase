@@ -14,8 +14,7 @@ export default function ShortcutCard({
   onEditDetails,
   onRecordKeys,
 }: ShortcutCardProps) {
-  const keysArray = shortcut.keys ?? shortcut.key?.split("+") ?? [];
-
+  const keysArray = shortcut.keys ?? [];
   return (
     <div className="w-full md:w-[48%] bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between gap-4 hover:shadow-lg transition-shadow duration-300">
       {/* Info */}
