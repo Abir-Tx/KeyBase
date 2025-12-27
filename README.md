@@ -39,3 +39,13 @@ make run
 ```
 
 This will start the FastAPI server on `http://localhost:8000`.
+
+## Technical Specs
+
+### Backend
+
+- Python version: 3.13.11
+
+### Frontend
+
+- Node version: 24.3.0
