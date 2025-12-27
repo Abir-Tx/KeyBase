@@ -88,11 +88,13 @@ export default function Home() {
   };
 
   // Filter & group
+  const q = searchQuery.toLowerCase();
+
   const filteredShortcuts = shortcuts.filter(
     (sc) =>
-      sc.app.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sc.keys?.some((k) => k.toLowerCase().includes(searchQuery.toLowerCase()))
+      sc.app.toLowerCase().includes(q) ||
+      (sc.description?.toLowerCase().includes(q) ?? false) ||
+      sc.keys?.some((k) => k.toLowerCase().includes(q))
   );
 
   const groupedShortcuts = filteredShortcuts.reduce(
