@@ -15,9 +15,7 @@ export default function RecordKeysModal({
   onClose,
   onSave,
 }: RecordKeysModalProps) {
-  const [keys, setKeys] = React.useState<string[]>(
-    shortcut.keys || (shortcut.key?.split("+") ?? [])
-  );
+  const [keys, setKeys] = React.useState<string[]>(shortcut.keys ?? []);
   const [saving, setSaving] = React.useState(false);
 
   const handleSave = async () => {
