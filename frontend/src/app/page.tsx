@@ -62,7 +62,7 @@ export default function Home() {
     (sc) =>
       sc.app.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sc.key.toLowerCase().includes(searchQuery.toLowerCase())
+      sc.keys.some((k) => k.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const groupedShortcuts = filteredShortcuts.reduce(
@@ -76,7 +76,8 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="w-full max-w-3xl mx-auto">
+      {/* Search bar */}
+      <div className="w-full max-w-4xl mx-auto">
         <input
           type="text"
           placeholder="Search shortcuts..."
@@ -86,7 +87,8 @@ export default function Home() {
         />
       </div>
 
-      <div className="w-full max-w-3xl mx-auto flex justify-end">
+      {/* Add shortcut button */}
+      <div className="w-full max-w-4xl mx-auto flex justify-end">
         <button
           onClick={() => setModalOpen(true)}
           className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition shadow"
@@ -95,9 +97,12 @@ export default function Home() {
         </button>
       </div>
 
-      <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
+      {/* Shortcuts list */}
+      <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
         {loading ? (
-          <p>Loading shortcuts...</p>
+          <p className="text-gray-600 dark:text-gray-300">
+            Loading shortcuts...
+          </p>
         ) : Object.keys(groupedShortcuts).length === 0 ? (
           <p className="text-gray-600 dark:text-gray-300">
             No shortcuts found.
@@ -105,22 +110,17 @@ export default function Home() {
         ) : (
           Object.keys(groupedShortcuts).map((app) => (
             <div key={app}>
-              <h2 className="text-xl font-bold mb-2">{app}</h2>
-              <div className="flex flex-col gap-4">
+              <h2 className="text-2xl font-bold mb-3">{app}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {groupedShortcuts[app].map((sc) => (
                   <div
                     key={sc.id}
-                    className="flex justify-between items-center p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 shadow-sm"
+                    className="flex flex-col p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shadow hover:shadow-lg transition"
                   >
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {sc.description}
-                      </p>
-                    </div>
-                    <div className="flex gap-2 items-center">
-                      <span className="px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded text-sm font-mono">
-                        {sc.key}
-                      </span>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        {sc.name || sc.app}
+                      </h3>
                       <button
                         onClick={() => {
                           setEditingShortcut(sc);
@@ -131,6 +131,35 @@ export default function Home() {
                         Edit
                       </button>
                     </div>
+                    <p className="text-gray-700 dark:text-gray-300 mb-2">
+                      {sc.description}
+                    </p>
+
+                    {/* Keys */}
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {sc.keys.map((k, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-100 text-sm font-mono"
+                        >
+                          {k}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Tags */}
+                    {sc.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {sc.tags.map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-100 text-xs font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
