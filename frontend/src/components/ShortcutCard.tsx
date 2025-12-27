@@ -14,8 +14,9 @@ export default function ShortcutCard({ shortcut, onEdit }: ShortcutCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -2, scale: 1.02 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-shadow duration-300"
+      className="w-full max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-shadow duration-300"
     >
       {/* Info Section */}
       <div className="flex flex-col gap-2 flex-1">
