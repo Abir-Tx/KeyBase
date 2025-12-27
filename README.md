@@ -69,3 +69,7 @@ npx create-next-app@latest frontend \
   --src-dir \
   --eslint
 ```
+
+## Dev notes
+
+- Install `pip install "starlette[full]"` to enable CORS in FastAPI
