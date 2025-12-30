@@ -21,11 +21,13 @@ RUN chmod +x wait-for-postgres.sh
 
 # Environment variables
 ENV POSTGRES_USER=abir \
-    POSTGRES_PASSWORD=SECRET \
-    POSTGRES_DB=defaultdb \
-    POSTGRES_HOST=postgres \
-    POSTGRES_PORT=5432 \
-    DATABASE_URL=postgresql+psycopg2://abir:SECRET@postgres:5432/defaultdb
+    POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+    POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+    POSTGRES_USER: ${POSTGRES_USER:-abir}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-SECRET}
+    POSTGRES_DB: ${POSTGRES_DB:-defaultdb}
+    DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://abir:SECRET@postgres:5432/defaultdb}
+    USE_INTERNAL_POSTGRES: ${USE_INTERNAL_POSTGRES:-true}  # optional flag
 
 # Expose port
 EXPOSE 8000
