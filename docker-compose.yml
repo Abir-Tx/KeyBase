@@ -28,6 +28,8 @@ services:
       POSTGRES_DB: defaultdb
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
+      # Use internel postgres or not - default true as this dockerfiles provides one. If you have your own postgre server always running then set to false and update the DATABASE_URL accordingly
+      USE_INTERNAL_POSTGRES: "true"
       DATABASE_URL: postgresql+psycopg2://abir:SECRET@postgres:5432/defaultdb
     ports:
       - "8000:8000"
