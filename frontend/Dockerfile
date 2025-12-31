@@ -1,25 +1,20 @@
-# Build stage
-FROM node:20-alpine AS builder
+# Use Node.js
+FROM node:20-alpine
 
+# Set working directory
 WORKDIR /app
 
+# Copy package.json and package-lock.json first (cache layer)
 COPY package*.json ./
+
+# Install all dependencies (including dev)
 RUN npm install
 
+# Copy the rest of the source code
 COPY . .
-RUN npm run build
 
-# Runtime stage
-FROM node:20-alpine AS runner
-
-WORKDIR /app
-ENV NODE_ENV=production
-
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package*.json ./
-
-RUN npm install --omit=dev
-
+# Expose Next.js dev port
 EXPOSE 3000
-CMD ["npm", "start"]
+
+# Run dev server by default
+CMD ["npm", "run", "dev"]
