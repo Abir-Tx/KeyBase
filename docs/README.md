@@ -81,3 +81,4 @@ npx create-next-app@latest frontend \
 ## Dev notes
 
 - Install `pip install "starlette[full]"` to enable CORS in FastAPI
+- Remember to delete the mounted volume data when making breaking changes to the database schema during development or in production as well only if you are using INTERNAL db
