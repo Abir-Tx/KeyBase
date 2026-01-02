@@ -8,7 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install dependencies + Postgres client
-RUN apt-get update && apt-get install -y postgresql-client gcc libpq-dev && \
+RUN apt-get update && apt-get install -y postgresql-client gcc libpq-dev curl && \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
     rm -rf /var/lib/apt/lists/*
