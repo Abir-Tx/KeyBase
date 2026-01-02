@@ -3,9 +3,9 @@ services:
     container_name: postgres
     image: postgres:16
     environment:
-      POSTGRES_USER: abir
-      POSTGRES_PASSWORD: SECRET
-      POSTGRES_DB: defaultdb
+      POSTGRES_USER: keybase
+      POSTGRES_PASSWORD: SUPERSECRET
+      POSTGRES_DB: keybase
       PGDATA: /data/postgres
     volumes:
       - /home/abir/database_data/postgresql/data:/data/postgres
@@ -24,13 +24,13 @@ services:
       - postgres
     environment:
       POSTGRES_USER: keybase
-      POSTGRES_PASSWORD: SECRET
+      POSTGRES_PASSWORD: SUPERSECRET
       POSTGRES_DB: keybase
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       # Use internel postgres or not - default true as this dockerfiles provides one. If you have your own postgre server always running then set to false and update the DATABASE_URL accordingly
       USE_INTERNAL_POSTGRES: "true"
-      DATABASE_URL: postgresql+psycopg2://keybase:SECRET@postgres:5432/keybase
+      DATABASE_URL: postgresql+psycopg2://keybase:SUPERSECRET@postgres:5432/keybase
     ports:
       - "8000:8000"
     networks:
