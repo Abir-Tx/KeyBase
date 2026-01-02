@@ -1,0 +1,44 @@
+# Docker compose for Mushfiqur Rahman Abir's KeyBase project. This docker compose example file is for those who wants to use their own postgres database.
+# You have to create a .env file in the same directory where this docker-compose file is located. You have to set the following environment variables in the .env file:
+# DATABASE_URL=postgresql://USERNAME:PASSWORD@HOSTIP:POST/DATABASE_NAME
+
+services:
+  backend:
+    image: abirtx/keybase-backend:latest
+    container_name: keybase-backend
+    environment:
+      USE_INTERNAL_POSTGRES: "false"
+      DATABASE_URL: postgresql+psycopg2://USERNAME:PASSWORD@HOSTIP:POST/DATABASE_NAME
+    ports:
+      - "8000:8000"
+    networks:
+      - keybase-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    image: abirtx/keybase-frontend:latest
+    container_name: keybase-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    networks:
+      - keybase-net
+    restart: unless-stopped
+    volumes:
+      - ./.env:/app/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  keybase-net:
+    driver: bridge
