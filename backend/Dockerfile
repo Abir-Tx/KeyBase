@@ -1,26 +1,29 @@
-# Base image
 FROM python:3.13-slim
 
-# Set workdir
 WORKDIR /app
 
-# Copy requirements first (to leverage Docker cache)
+# System deps
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python deps
 COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Install dependencies + Postgres client
-RUN apt-get update && apt-get install -y postgresql-client gcc libpq-dev curl && \
-    pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy backend code
+# Copy app
 COPY . .
 
 # Make wait script executable
 RUN chmod +x wait-for-postgres.sh
 
-# Environment variables
-ENV POSTGRES_USER=keybase \
+# Environment
+ENV PYTHONUNBUFFERED=1 \
+    POSTGRES_USER=keybase \
     POSTGRES_HOST=postgres \
     POSTGRES_PORT=5432 \
     POSTGRES_PASSWORD=keybase \
@@ -28,12 +31,10 @@ ENV POSTGRES_USER=keybase \
     DATABASE_URL=postgresql+psycopg2://keybase:keybase@postgres:5432/keybase \
     USE_INTERNAL_POSTGRES=true
 
-# Expose port
 EXPOSE 8000
 
-# CMD: wait for Postgres, run migrations, then start server
-#CMD ["./wait-for-postgres.sh", "postgres", "bash", "-c", "alembic -c alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
-# CMD ["./wait-for-postgres.sh", "postgres", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-CMD ["./wait-for-postgres.sh", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-
+# 🔥 IMPORTANT PART
+# 1. Wait for Postgres
+# 2. Run Alembic migrations
+# 3. Start Uvicorn
+CMD ["bash", "-c", "./wait-for-postgres.sh && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
