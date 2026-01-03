@@ -1,0 +1,68 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:16
+    environment:
+      POSTGRES_USER: keybase
+      POSTGRES_PASSWORD: keybase
+      POSTGRES_DB: keybase
+      PGDATA: /data/postgres
+    volumes:
+      - ./database_data/data:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - keybase-net
+    restart: unless-stopped
+
+  backend:
+    image: abirtx/keybase-backend:latest
+    container_name: keybase-backend
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_USER: keybase
+      POSTGRES_PASSWORD: keybase
+      POSTGRES_DB: keybase
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      USE_INTERNAL_POSTGRES: "true"
+      DATABASE_URL: postgresql+psycopg2://keybase:keybase@postgres:5432/keybase
+    ports:
+      - "8000:8000"
+    networks:
+      - keybase-net
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    image: abirtx/keybase-frontend:latest
+    container_name: keybase-frontend
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8000
+    volumes:
+      - ./.env:/app/.env
+    ports:
+      - "3000:3000"
+    networks:
+      - keybase-net
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+networks:
+  keybase-net:
+    driver: bridge
