@@ -16,12 +16,12 @@ export type Shortcut = {
 };
 
 export const fetchShortcuts = async (): Promise<Shortcut[]> => {
-  const res = await axios.get(`${API_BASE}/shortcuts`);
+  const res = await axios.get(`${API_BASE}/shortcuts/`);
   return res.data;
 };
 
 export const addShortcut = async (shortcut: Shortcut) => {
-  const res = await axios.post(`${API_BASE}/shortcuts`, shortcut);
+  const res = await axios.post(`${API_BASE}/shortcuts/`, shortcut);
   return res.data;
 };
 
