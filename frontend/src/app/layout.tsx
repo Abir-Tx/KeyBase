@@ -1,9 +1,10 @@
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
+import { Metadata } from "next";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "KeyBase",
-  description: "Shortcut management app",
+  description: "Shortcut management app by Mushfiqur Rahman Abir",
 };
 
 export default function RootLayout({
@@ -12,8 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body>
+    // suppressHydrationWarning is needed for next-themes to avoid mismatch errors
+    <html lang="en" suppressHydrationWarning className="scroll-smooth">
+      <body className="antialiased min-h-screen">
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

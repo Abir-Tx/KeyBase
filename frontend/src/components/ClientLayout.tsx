@@ -13,14 +13,18 @@ export default function ClientLayout({
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
 
   return (
-    <ThemeProvider>
-      <div className="flex min-h-screen transition-colors  duration-300">
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      {/* The outer div handles the layout. 
+         Global background transitions are handled in globals.css for 'body',
+         so we don't need excessive transition classes here which might conflict.
+      */}
+      <div className="flex min-h-screen">
         <Sidebar
           open={!sidebarOpen}
           toggle={() => setSidebarOpen(!sidebarOpen)}
         />
-        <main className="flex-1 p-6 md:p-8 lg:p-12">
-          <div className="flex justify-end mb-6">
+        <main className="flex-1 p-6 md:p-8 lg:p-12 transition-all duration-300">
+          <div className="flex justify-end mb-8">
             <ThemeToggle />
           </div>
           {children}
