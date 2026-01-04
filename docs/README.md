@@ -1,6 +1,6 @@
 # KeyBase
 
-Dumb app to store shortcut documentations
+Dumb app to store shortcut documentations easily.
 
 ## Shorcut Model
 
@@ -82,3 +82,11 @@ npx create-next-app@latest frontend \
 
 - Install `pip install "starlette[full]"` to enable CORS in FastAPI
 - Remember to delete the mounted volume data when making breaking changes to the database schema during development or in production as well only if you are using INTERNAL db
+
+## Docker Compose Setup
+
+Visit the sample docker-compose files in the [docker examples directory](./docker-examples) for setting up KeyBase with Docker Compose. There are two examples provided:
+
+1. **Using Internal Database**: This setup uses a PostgreSQL database container that is managed within the same Docker Compose file.
+
+2. **Using External Database**: This setup connects the KeyBase application to an external PostgreSQL database, allowing for more flexibility in database management.
