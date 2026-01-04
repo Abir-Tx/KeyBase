@@ -7,8 +7,7 @@ type ShortcutCardProps = {
   shortcut: Shortcut;
   onEditDetails: (sc: Shortcut) => void; // full edit modal
   onRecordKeys: (sc: Shortcut) => void; // record keys modal
-  // onDeleteShortcut: (sc: Shortcut) => void; // delete shortcut modal
-  onDelete: (sc: Shortcut) => void;
+  onDelete: (sc: Shortcut) => void; // Delete shortcut
 };
 
 export default function ShortcutCard({
