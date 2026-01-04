@@ -30,3 +30,10 @@ export const updateShortcut = async (shortcut: Shortcut) => {
   const res = await axios.put(`${API_BASE}/shortcuts/${shortcut.id}`, shortcut);
   return res.data;
 };
+
+// Delete a shortcut by ID
+export const deleteShortcut = async (shortcut: Shortcut) => {
+  if (!shortcut.id) throw new Error("Shortcut ID is required for deletion");
+  const res = await axios.delete(`${API_BASE}/shortcuts/${shortcut.id}`);
+  return res.data;
+};
