@@ -44,16 +44,19 @@ export default function AddEditShortcutModal({
   }, [recording]);
 
   const handleSubmit = () => {
+    if (!name.trim() || keys.length === 0) return;
+
     onSave({
       id: shortcut?.id,
-      name,
-      keys: keys.length ? keys : [name],
+      name: name.trim(),
+      keys,
       app,
       os,
       description,
-      tags: tags || [],
+      tags,
     });
   };
+  const isValid = name.trim().length > 0 && keys.length > 0;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -70,6 +73,10 @@ export default function AddEditShortcutModal({
             onChange={(e) => setName(e.target.value)}
             className="p-2 rounded border dark:bg-gray-700"
           />
+          {/* The Validation check warning */}
+          {!name.trim() && (
+            <p className="text-sm text-red-500">Name is required</p>
+          )}
 
           {/* Keys input */}
           <input
@@ -81,6 +88,10 @@ export default function AddEditShortcutModal({
             }
             className="p-2 rounded border dark:bg-gray-700"
           />
+          {/* The Validation for keys input */}
+          {!name.trim() && (
+            <p className="text-sm text-red-500">Name is required</p>
+          )}
 
           {/* Record keys */}
           <div className="flex items-center gap-3">
@@ -146,7 +157,12 @@ export default function AddEditShortcutModal({
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 rounded bg-blue-600 text-white"
+            disabled={!isValid}
+            className={`px-4 py-2 rounded transition ${
+              isValid
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-gray-400 text-gray-700 cursor-not-allowed"
+            }`}
           >
             Save
           </button>
