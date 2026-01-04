@@ -16,7 +16,7 @@ export default function ClientLayout({
     <ThemeProvider>
       <div className="flex min-h-screen transition-colors  duration-300">
         <Sidebar
-          open={sidebarOpen}
+          open={!sidebarOpen}
           toggle={() => setSidebarOpen(!sidebarOpen)}
         />
         <main className="flex-1 p-6 md:p-8 lg:p-12">
