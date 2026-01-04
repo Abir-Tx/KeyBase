@@ -7,12 +7,16 @@ type ShortcutCardProps = {
   shortcut: Shortcut;
   onEditDetails: (sc: Shortcut) => void; // full edit modal
   onRecordKeys: (sc: Shortcut) => void; // record keys modal
+  // onDeleteShortcut: (sc: Shortcut) => void; // delete shortcut modal
+  onDelete: (sc: Shortcut) => void;
 };
 
 export default function ShortcutCard({
   shortcut,
   onEditDetails,
   onRecordKeys,
+  // onDeleteShortcut,
+  onDelete,
 }: ShortcutCardProps) {
   const keysArray = shortcut.keys ?? [];
   return (
@@ -60,6 +64,13 @@ export default function ShortcutCard({
           className="flex-1 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm transition"
         >
           Record Keys
+        </button>
+        {/* Delete button */}
+        <button
+          onClick={() => onDelete(shortcut)}
+          className="px-3 py-1 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+        >
+          Delete
         </button>
       </div>
     </div>
