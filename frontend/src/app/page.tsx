@@ -8,6 +8,7 @@ import {
   addShortcut,
   updateShortcut,
   Shortcut,
+  deleteShortcut,
 } from "@/lib/api";
 import ShortcutCard from "@/components/ShortcutCard";
 
@@ -25,6 +26,8 @@ export default function Home() {
     null
   );
   const [recordModalOpen, setRecordModalOpen] = React.useState(false);
+  const [deletingShortcut, setDeletingShortcut] =
+    React.useState<Shortcut | null>(null);
 
   // Load shortcuts
   React.useEffect(() => {
@@ -84,6 +87,24 @@ export default function Home() {
     } finally {
       setRecordShortcut(null);
       setRecordModalOpen(false);
+    }
+  };
+
+  // Handle Delete shortcut button
+  const handleDeleteShortcut = async (shortcut: Shortcut) => {
+    if (!shortcut.id) return;
+
+    const ok = confirm(
+      `Delete shortcut "${shortcut.name}" for ${shortcut.app}?`
+    );
+    if (!ok) return;
+
+    try {
+      await deleteShortcut(shortcut);
+      setShortcuts((prev) => prev.filter((s) => s.id !== shortcut.id));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete shortcut");
     }
   };
 
@@ -161,6 +182,7 @@ export default function Home() {
                       setRecordShortcut(sc);
                       setRecordModalOpen(true);
                     }}
+                    onDelete={handleDeleteShortcut}
                   />
                 ))}
               </div>

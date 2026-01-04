@@ -22,19 +22,41 @@ export default function AddEditShortcutModal({
     shortcut?.description || ""
   );
   const [tags, setTags] = React.useState<string[]>(shortcut?.tags || []);
+  const [recording, setRecording] = React.useState(false);
+
+  // 🔴 Record keys logic
+  React.useEffect(() => {
+    if (!recording) return;
+
+    const pressed = new Set<string>();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      pressed.add(e.key);
+      setKeys(Array.from(pressed));
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [recording]);
 
   const handleSubmit = () => {
-    // ensure keys and tags are always arrays
+    if (!name.trim() || keys.length === 0) return;
+
     onSave({
       id: shortcut?.id,
-      name,
-      keys: keys.length ? keys : [name], // fallback to name if empty
+      name: name.trim(),
+      keys,
       app,
       os,
       description,
-      tags: tags || [],
+      tags,
     });
   };
+  const isValid = name.trim().length > 0 && keys.length > 0;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -49,58 +71,103 @@ export default function AddEditShortcutModal({
             placeholder="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="p-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            className="p-2 rounded border dark:bg-gray-700"
           />
+          {/* The Validation check warning */}
+          {!name.trim() && (
+            <p className="text-sm text-red-500">Name is required</p>
+          )}
+
+          {/* Keys input */}
           <input
             type="text"
             placeholder="Keys (comma separated)"
-            value={keys.join(",")}
+            value={keys.join(", ")}
             onChange={(e) =>
-              setKeys(e.target.value.split(",").map((k) => k.trim()))
+              setKeys(
+                e.target.value
+                  .split(",")
+                  .map((k) => k.trim())
+                  .filter(Boolean) // 👈 THIS FIXES EVERYTHING
+              )
             }
-            className="p-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            className="p-2 rounded border dark:bg-gray-700"
           />
+          {/* The Validation for keys input */}
+          {!name.trim() && (
+            <p className="text-sm text-red-500">Shortcut Keys are required</p>
+          )}
+
+          {/* Record keys */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setRecording((r) => !r)}
+              className={`px-3 py-2 rounded text-sm transition ${
+                recording
+                  ? "bg-red-600 text-white"
+                  : "bg-gray-200 dark:bg-gray-700"
+              }`}
+            >
+              {recording ? "Stop Recording" : "Record Keys"}
+            </button>
+
+            {recording && (
+              <span className="text-sm text-gray-500">
+                Press your shortcut…
+              </span>
+            )}
+          </div>
+
           <input
             type="text"
             placeholder="App"
             value={app}
             onChange={(e) => setApp(e.target.value)}
-            className="p-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            className="p-2 rounded border dark:bg-gray-700"
           />
+
           <input
             type="text"
             placeholder="OS"
             value={os}
             onChange={(e) => setOs(e.target.value)}
-            className="p-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            className="p-2 rounded border dark:bg-gray-700"
           />
+
           <textarea
             placeholder="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="p-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            className="p-2 rounded border dark:bg-gray-700"
           />
+
           <input
             type="text"
             placeholder="Tags (comma separated)"
-            value={tags.join(",")}
+            value={tags.join(", ")}
             onChange={(e) =>
               setTags(e.target.value.split(",").map((t) => t.trim()))
             }
-            className="p-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            className="p-2 rounded border dark:bg-gray-700"
           />
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-400 dark:hover:bg-gray-500 transition"
+            className="px-4 py-2 rounded bg-gray-300 dark:bg-gray-600"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition"
+            disabled={!isValid}
+            className={`px-4 py-2 rounded transition ${
+              isValid
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-gray-400 text-gray-700 cursor-not-allowed"
+            }`}
           >
             Save
           </button>
