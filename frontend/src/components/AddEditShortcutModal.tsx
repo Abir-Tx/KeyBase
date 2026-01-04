@@ -84,13 +84,18 @@ export default function AddEditShortcutModal({
             placeholder="Keys (comma separated)"
             value={keys.join(", ")}
             onChange={(e) =>
-              setKeys(e.target.value.split(",").map((k) => k.trim()))
+              setKeys(
+                e.target.value
+                  .split(",")
+                  .map((k) => k.trim())
+                  .filter(Boolean) // 👈 THIS FIXES EVERYTHING
+              )
             }
             className="p-2 rounded border dark:bg-gray-700"
           />
           {/* The Validation for keys input */}
           {!name.trim() && (
-            <p className="text-sm text-red-500">Name is required</p>
+            <p className="text-sm text-red-500">Shortcut Keys are required</p>
           )}
 
           {/* Record keys */}
