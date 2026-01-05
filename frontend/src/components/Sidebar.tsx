@@ -43,7 +43,7 @@ export default function Sidebar({ open, toggle }: SidebarProps) {
             {sidebarOptions.map((item) => (
               <li
                 key={item}
-                className="p-3 rounded hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition text-blue-400"
+                className="p-3 rounded hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition text-blue-500"
               >
                 {item}
               </li>

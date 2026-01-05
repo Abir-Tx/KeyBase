@@ -203,7 +203,8 @@ export default function Home() {
                 {/* Header with explicit text colors for Light/Dark */}
                 <div className="flex items-center gap-3">
                   <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span>
-                  <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                  {/* The Shortcut Apps name heading */}
+                  <h2 className="text-xl font-bold text-slate-800 dark:text-blue-500">
                     {app}
                   </h2>
                 </div>
