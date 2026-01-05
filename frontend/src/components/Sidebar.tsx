@@ -5,6 +5,9 @@ type SidebarProps = {
   toggle: () => void;
 };
 
+// The options to show on the sidebar
+const sidebarOptions = ["By Mushfiqur Rahman Abir"];
+
 export default function Sidebar({ open, toggle }: SidebarProps) {
   return (
     <>
@@ -37,16 +40,14 @@ export default function Sidebar({ open, toggle }: SidebarProps) {
 
         <nav className="mt-6">
           <ul className="flex flex-col gap-1 px-2">
-            {["Coming Soon", "V0.6.0 - By Mushfiqur Rahman Abir"].map(
-              (item) => (
-                <li
-                  key={item}
-                  className="p-3 rounded hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition"
-                >
-                  {item}
-                </li>
-              )
-            )}
+            {sidebarOptions.map((item) => (
+              <li
+                key={item}
+                className="p-3 rounded hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition"
+              >
+                {item}
+              </li>
+            ))}
           </ul>
         </nav>
       </aside>
