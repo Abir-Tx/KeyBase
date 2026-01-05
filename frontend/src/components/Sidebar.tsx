@@ -18,6 +18,14 @@ export default function Sidebar({ open, toggle }: SidebarProps) {
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             KeyBase
           </h1>
+          <h4>
+            <a
+              href="https://github.com/Abir-Tx/KeyBase"
+              className="text-gray-500 dark:text-gray-400 hover:underline"
+            >
+              v0.9.0
+            </a>
+          </h4>
           <button
             onClick={toggle}
             className="p-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
