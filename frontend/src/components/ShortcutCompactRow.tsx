@@ -9,15 +9,21 @@ import {
   Keyboard,
   Trash2,
   Copy,
+  CopyPlus,
   Check,
   AlertTriangle,
+  Pin,
 } from "lucide-react";
 
 type ShortcutCompactRowProps = {
   shortcut: Shortcut;
   hasConflict?: boolean;
+  isPinned?: boolean;
+  showAppBadge?: boolean;
   onEditDetails: (sc: Shortcut) => void;
   onRecordKeys: (sc: Shortcut) => void;
+  onClone: (sc: Shortcut) => void;
+  onTogglePin: (sc: Shortcut) => void;
   onDelete: (sc: Shortcut) => void;
   onFilterOs?: (os: string) => void;
   onFilterTag?: (tag: string) => void;
@@ -29,8 +35,12 @@ type ShortcutCompactRowProps = {
 export default function ShortcutCompactRow({
   shortcut,
   hasConflict = false,
+  isPinned = false,
+  showAppBadge = false,
   onEditDetails,
   onRecordKeys,
+  onClone,
+  onTogglePin,
   onDelete,
   onFilterOs,
   onFilterTag,
@@ -46,6 +56,11 @@ export default function ShortcutCompactRow({
       {/* Name, Conflict & Description */}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+          {showAppBadge && shortcut.app && (
+            <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+              {shortcut.app}
+            </span>
+          )}
           <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 break-words">
             {shortcut.name || shortcut.app}
           </span>
@@ -118,7 +133,22 @@ export default function ShortcutCompactRow({
           )}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => onTogglePin(shortcut)}
+            title={isPinned ? "Unpin shortcut" : "Pin to Learning section"}
+            aria-label={
+              isPinned ? `Unpin ${shortcut.name}` : `Pin ${shortcut.name}`
+            }
+            className={`p-1.5 rounded-md transition-colors ${
+              isPinned
+                ? "text-amber-500 bg-amber-50 dark:bg-amber-950/40"
+                : "text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+            }`}
+          >
+            <Pin size={14} className={isPinned ? "fill-current" : ""} />
+          </button>
           {keysArray.length > 0 && (
             <button
               type="button"
@@ -134,6 +164,15 @@ export default function ShortcutCompactRow({
               )}
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => onClone(shortcut)}
+            title="Clone Shortcut"
+            aria-label={`Clone ${shortcut.name}`}
+            className="p-1.5 rounded-md text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+          >
+            <CopyPlus size={14} />
+          </button>
           <button
             type="button"
             onClick={() => onEditDetails(shortcut)}

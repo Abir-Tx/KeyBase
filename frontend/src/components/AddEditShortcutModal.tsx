@@ -115,7 +115,11 @@ export default function AddEditShortcutModal({
             id="add-edit-shortcut-title"
             className="text-xl font-bold text-slate-900 dark:text-white"
           >
-            {shortcut ? "Edit Shortcut" : "Add New Shortcut"}
+            {shortcut?.id
+              ? "Edit Shortcut"
+              : shortcut
+                ? "Clone Shortcut"
+                : "Add New Shortcut"}
           </h2>
           <button
             type="button"

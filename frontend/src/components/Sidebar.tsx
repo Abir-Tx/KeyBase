@@ -1,12 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Menu, X, ExternalLink, Keyboard, RotateCcw } from "lucide-react";
+import Image from "next/image";
+import { X, ExternalLink, RotateCcw } from "lucide-react";
 import { useShortcutFilters } from "@/lib/filter-context";
 
 type SidebarProps = {
   open: boolean;
-  onOpen: () => void;
   onClose: () => void;
 };
 
@@ -17,7 +17,7 @@ function isSelected(selected: string[], value: string): boolean {
 /**
  * Collapsible slide-out filter & navigation drawer.
  */
-export default function Sidebar({ open, onOpen, onClose }: SidebarProps) {
+export default function Sidebar({ open, onClose }: SidebarProps) {
   const {
     shortcuts,
     selectedApps,
@@ -64,9 +64,12 @@ export default function Sidebar({ open, onOpen, onClose }: SidebarProps) {
           {/* Header */}
           <div className="p-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-800 shrink-0">
             <div className="flex items-center gap-2.5">
-              <Keyboard
-                size={20}
-                className="text-blue-600 dark:text-blue-400"
+              <Image
+                src="/logo.png"
+                alt="KeyBase logo"
+                width={26}
+                height={26}
+                className="rounded-md"
               />
               <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                 KeyBase
@@ -77,7 +80,7 @@ export default function Sidebar({ open, onOpen, onClose }: SidebarProps) {
                 rel="noreferrer"
                 className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
-                v0.12.0
+                v1.0.0
               </a>
             </div>
             <button
@@ -253,22 +256,6 @@ export default function Sidebar({ open, onOpen, onClose }: SidebarProps) {
         </div>
       </aside>
 
-      {!open && (
-        <button
-          type="button"
-          onClick={onOpen}
-          aria-label="Open sidebar"
-          className="fixed left-4 top-6 z-40 inline-flex items-center gap-1.5 p-2 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-        >
-          <Menu size={18} />
-          {hasActiveFilters && (
-            <span
-              className="w-2 h-2 rounded-full bg-blue-600"
-              aria-hidden="true"
-            />
-          )}
-        </button>
-      )}
     </>
   );
 }
