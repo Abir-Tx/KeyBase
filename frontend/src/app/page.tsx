@@ -21,6 +21,7 @@ import {
   parseOsList,
 } from "@/lib/shortcuts";
 import ShortcutCard from "@/components/ShortcutCard";
+import ShortcutCompactRow from "@/components/ShortcutCompactRow";
 import {
   Search,
   Plus,
@@ -29,7 +30,34 @@ import {
   RotateCw,
   HelpCircle,
   ArrowUpDown,
+  LayoutGrid,
+  List,
 } from "lucide-react";
+
+type ViewMode = "cards" | "compact";
+const VIEW_MODE_KEY = "keybase-view-mode";
+const VIEW_MODE_EVENT = "keybase-view-mode-change";
+
+function subscribeViewMode(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(VIEW_MODE_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(VIEW_MODE_EVENT, callback);
+  };
+}
+
+function getViewModeSnapshot(): ViewMode {
+  if (typeof window === "undefined") return "cards";
+  return window.localStorage.getItem(VIEW_MODE_KEY) === "compact"
+    ? "compact"
+    : "cards";
+}
+
+function saveViewMode(mode: ViewMode) {
+  window.localStorage.setItem(VIEW_MODE_KEY, mode);
+  window.dispatchEvent(new Event(VIEW_MODE_EVENT));
+}
 
 function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -63,6 +91,11 @@ export default function Home() {
   const [importExportOpen, setImportExportOpen] = React.useState(false);
 
   const searchInputRef = React.useRef<HTMLInputElement | null>(null);
+  const viewMode = React.useSyncExternalStore(
+    subscribeViewMode,
+    getViewModeSnapshot,
+    () => "cards"
+  );
 
   const {
     setShortcutsForFilters,
@@ -134,6 +167,9 @@ export default function Home() {
         e.preventDefault();
         setEditingShortcut(null);
         setModalOpen(true);
+      } else if (e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        saveViewMode(getViewModeSnapshot() === "cards" ? "compact" : "cards");
       } else if (e.key === "?") {
         e.preventDefault();
         setHelpOpen(true);
@@ -302,7 +338,42 @@ export default function Home() {
           )}
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div
+            role="group"
+            aria-label="View mode"
+            className="inline-flex rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 shadow-sm"
+          >
+            <button
+              type="button"
+              onClick={() => saveViewMode("cards")}
+              aria-pressed={viewMode === "cards"}
+              title="Cards view (v)"
+              aria-label="Cards view"
+              className={`p-2 rounded-lg transition ${
+                viewMode === "cards"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+            >
+              <LayoutGrid size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => saveViewMode("compact")}
+              aria-pressed={viewMode === "compact"}
+              title="Compact cheat-sheet view (v)"
+              aria-label="Compact cheat-sheet view"
+              className={`p-2 rounded-lg transition ${
+                viewMode === "compact"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+            >
+              <List size={16} />
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => setImportExportOpen(true)}
@@ -471,15 +542,25 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div
+                  className={
+                    viewMode === "compact"
+                      ? "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm divide-y divide-slate-100 dark:divide-slate-700/60 overflow-hidden"
+                      : "grid grid-cols-1 md:grid-cols-2 gap-6"
+                  }
+                >
                   {groupedShortcuts[app].map((sc) => {
-                    const isConflict =
-                      (conflictMap.get(getConflictKey(sc)) || 0) > 1;
+                    const ItemComponent =
+                      viewMode === "compact"
+                        ? ShortcutCompactRow
+                        : ShortcutCard;
                     return (
-                      <ShortcutCard
+                      <ItemComponent
                         key={sc.id}
                         shortcut={sc}
-                        hasConflict={isConflict}
+                        hasConflict={
+                          (conflictMap.get(getConflictKey(sc)) || 0) > 1
+                        }
                         onEditDetails={(item) => {
                           setEditingShortcut(item);
                           setModalOpen(true);

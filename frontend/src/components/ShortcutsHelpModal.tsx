@@ -12,6 +12,7 @@ const KEYBOARD_TIPS = [
   { keys: ["/", "Ctrl + K"], label: "Focus search bar" },
   { keys: ["Esc"], label: "Clear/blur search or close active modal" },
   { keys: ["n"], label: "Add a new shortcut" },
+  { keys: ["v"], label: "Toggle Cards / Compact view" },
   { keys: ["?"], label: "Open this keyboard shortcuts guide" },
   { keys: ["Ctrl + Enter"], label: "Save while editing in Add/Edit modal" },
 ];
@@ -21,10 +22,14 @@ export default function ShortcutsHelpModal({
 }: ShortcutsHelpModalProps) {
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      }
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [onClose]);
 
   return (
