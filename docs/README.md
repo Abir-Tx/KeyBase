@@ -1,74 +1,20 @@
-# KeyBase
+# KeyBase Developer Notes
 
-Dumb app to store shortcut documentations easily.
+For setup, local development, Docker Compose deployment, and multi-arch Docker Hub publishing instructions, see the [root README](../README.md).
 
-## Shorcut Model
-
-```ts
-Shortcut {
-  id: UUID
-  name: string
-  keys: string[]        // ["Ctrl", "Shift", "K"]
-  app: string           // "i3wm"
-  os: string            // "Arch Linux"
-  description?: string
-  tags: string[]
-  created_at: datetime
-  updated_at: datetime
-}
-```
-
-## `.env` File
-
-### For Backend
-
-Create a `.env` file in the `backend/` directory with the following variables:
-
-```
-DATABASE_URL=postgresql://username:password@db-address:PORT/DBNAME
-```
-
-### For Frontend
-
-Create a `.env` file in the `frontend/` directory with the following variables:
-
-```
-NEXT_PUBLIC_API_BASE=http://localhost:8000
-```
-
-## Usage
+## Technical Stack & Versions
 
 ### Backend
-
-The backend is build with FastAPI. To run the backend server, navigate to the `backend/` directory and execute:
-
-```bash
-make run
-```
-
-This will start the FastAPI server on `http://localhost:8000`.
+- **Framework:** FastAPI (`0.127.1`) + SQLAlchemy (`2.0.45`) + Alembic (`1.17.2`)
+- **Python:** `3.13.11`
+- **Health check:** `GET /health`
 
 ### Frontend
+- **Framework:** Next.js `16.1.1` (App Router, Turbopack), React `19.2.3`, TypeScript
+- **Styling & UI:** Tailwind CSS v4, `next-themes`, Framer Motion, Lucide React
+- **Node.js:** `24.3.0` (`npm 11.6.0`)
 
-To run the frontend development server, navigate to the `frontend/` directory and execute:
-
-```bash
-make dev
-```
-
-## Technical Specs
-
-### Backend
-
-- Python version: 3.13.11
-
-### Frontend
-
-- Node version: 24.3.0
-- NPX Version: 11.6.0
-
-#### Command Used to Create React App
-
+Initial scaffold command used:
 ```bash
 npx create-next-app@latest frontend \
   --typescript \
@@ -78,20 +24,24 @@ npx create-next-app@latest frontend \
   --eslint
 ```
 
-## Dev notes
+## Useful `Makefile` Commands
 
-- Install `pip install "starlette[full]"` to enable CORS in FastAPI
-- Remember to delete the mounted volume data when making breaking changes to the database schema during development or in production as well only if you are using INTERNAL db
+### `backend/`
+- `make activate` — source `venv/bin/activate`
+- `make run` — run FastAPI dev server (`uvicorn app.main:app --reload --host 0.0.0.0`)
+- `make req` — regenerate `requirements.txt` via `pip freeze`
 
-## Docker Compose Setup
+### `frontend/`
+- `make dev` — start Next.js dev server (`npm run dev`)
 
-Visit the sample docker-compose files in the [docker examples directory](./docker-examples) for setting up KeyBase with Docker Compose. There are two examples provided:
+## Database & Migrations Notes
 
-1. **Using Internal Database**: This setup uses a PostgreSQL database container that is managed within the same Docker Compose file.
+- **Alembic:** Update `backend/.env` with `DATABASE_URL`, then run `alembic upgrade head` (or `alembic revision --autogenerate -m "..."` after model changes).
+- **Internal Postgres Volume:** If you make breaking schema changes while running an internal Postgres container without a migration, clear the mounted Postgres data volume before recreating the stack.
+- **CORS:** `backend/app/main.py` currently enables `CORSMiddleware` (requires `starlette` / `fastapi`).
 
-2. **Using External Database**: This setup connects the KeyBase application to an external PostgreSQL database, allowing for more flexibility in database management.
+## Docker Compose Examples
 
-## Docker Hub
-
-- https://hub.docker.com/r/abirtx/keybase-backend
-- https://hub.docker.com/r/abirtx/keybase-frontend
+See [`../compose-examples`](../compose-examples) for both deployment templates:
+1. [`keybase-internal-db.yml`](../compose-examples/keybase-internal-db.yml) — Managed `postgres:16` container inside the same Compose network.
+2. [`keybase-external-db.yml`](../compose-examples/keybase-external-db.yml) — Connects to an external PostgreSQL server (`USE_INTERNAL_POSTGRES="false"`).
