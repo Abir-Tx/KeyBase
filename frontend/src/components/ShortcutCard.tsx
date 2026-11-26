@@ -2,25 +2,60 @@
 
 import * as React from "react";
 import { Shortcut } from "@/lib/api";
+import { formatKeysText, parseOsList } from "@/lib/shortcuts";
 import { motion } from "framer-motion";
-import { Edit2, Keyboard, Trash2 } from "lucide-react";
+import {
+  Edit2,
+  Keyboard,
+  Trash2,
+  Copy,
+  Check,
+  AlertTriangle,
+} from "lucide-react";
 
 type ShortcutCardProps = {
   shortcut: Shortcut;
+  hasConflict?: boolean;
   onEditDetails: (sc: Shortcut) => void;
   onRecordKeys: (sc: Shortcut) => void;
   onDelete: (sc: Shortcut) => void;
+  onFilterOs?: (os: string) => void;
+  onFilterTag?: (tag: string) => void;
 };
 
 export default function ShortcutCard({
   shortcut,
+  hasConflict = false,
   onEditDetails,
   onRecordKeys,
   onDelete,
+  onFilterOs,
+  onFilterTag,
 }: ShortcutCardProps) {
+  const [copied, setCopied] = React.useState(false);
+  const copyTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
   const keysArray = shortcut.keys ?? [];
   const tagsArray = (shortcut.tags ?? []).filter(Boolean);
-  const showOs = shortcut.os && shortcut.os.toLowerCase() !== "any";
+  const osList = parseOsList(shortcut.os);
+
+  const handleCopyKeys = async () => {
+    if (keysArray.length === 0) return;
+    try {
+      await navigator.clipboard.writeText(formatKeysText(keysArray));
+      setCopied(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // Clipboard unavailable in insecure context; ignore silently
+    }
+  };
 
   return (
     <motion.div
@@ -30,9 +65,20 @@ export default function ShortcutCard({
       {/* Header */}
       <div className="flex justify-between items-start gap-2">
         <div className="flex flex-col gap-1 min-w-0">
-          <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 tracking-tight break-words">
-            {shortcut.name || shortcut.app}
-          </h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 tracking-tight break-words">
+              {shortcut.name || shortcut.app}
+            </h3>
+            {hasConflict && (
+              <span
+                title="Another shortcut in this app uses the same key combination"
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/70 dark:border-amber-700/60"
+              >
+                <AlertTriangle size={11} />
+                Duplicate keys
+              </span>
+            )}
+          </div>
           {shortcut.description && (
             <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
               {shortcut.description}
@@ -40,23 +86,41 @@ export default function ShortcutCard({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(shortcut);
-          }}
-          className="shrink-0 opacity-75 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
-          title="Delete Shortcut"
-          aria-label={`Delete ${shortcut.name}`}
-        >
-          <Trash2 size={16} />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          {keysArray.length > 0 && (
+            <button
+              type="button"
+              onClick={handleCopyKeys}
+              className="opacity-75 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md"
+              title={copied ? "Copied!" : `Copy "${formatKeysText(keysArray)}"`}
+              aria-label={`Copy keys for ${shortcut.name}`}
+            >
+              {copied ? (
+                <Check size={16} className="text-emerald-500" />
+              ) : (
+                <Copy size={16} />
+              )}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(shortcut);
+            }}
+            className="opacity-75 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
+            title="Delete Shortcut"
+            aria-label={`Delete ${shortcut.name}`}
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Keys + Metadata */}
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {keysArray.length > 0 ? (
             keysArray.map((key, idx) => (
               <kbd
@@ -71,22 +135,36 @@ export default function ShortcutCard({
               No keys recorded
             </span>
           )}
+          {copied && (
+            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              Copied!
+            </span>
+          )}
         </div>
 
-        {(showOs || tagsArray.length > 0) && (
+        {(osList.length > 0 || tagsArray.length > 0) && (
           <div className="flex flex-wrap items-center gap-1.5">
-            {showOs && (
-              <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60">
-                {shortcut.os}
-              </span>
-            )}
+            {osList.map((osItem) => (
+              <button
+                key={osItem}
+                type="button"
+                onClick={() => onFilterOs?.(osItem)}
+                title={`Filter by ${osItem}`}
+                className="px-2 py-0.5 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors"
+              >
+                {osItem}
+              </button>
+            ))}
             {tagsArray.map((tag, idx) => (
-              <span
+              <button
                 key={`${tag}-${idx}`}
-                className="px-2 py-0.5 text-xs rounded-md bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300"
+                type="button"
+                onClick={() => onFilterTag?.(tag)}
+                title={`Filter by #${tag}`}
+                className="px-2 py-0.5 text-xs rounded-md bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
               >
                 #{tag}
-              </span>
+              </button>
             ))}
           </div>
         )}

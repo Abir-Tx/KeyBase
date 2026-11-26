@@ -8,12 +8,16 @@ import { X } from "lucide-react";
 
 type Props = {
   shortcut: Shortcut | null;
+  appSuggestions?: string[];
+  osSuggestions?: string[];
   onClose: () => void;
   onSave: (shortcut: Shortcut) => Promise<void>;
 };
 
 export default function AddEditShortcutModal({
   shortcut,
+  appSuggestions = [],
+  osSuggestions = [],
   onClose,
   onSave,
 }: Props) {
@@ -30,13 +34,8 @@ export default function AddEditShortcutModal({
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const {
-    keys,
-    setKeys,
-    recording,
-    startRecording,
-    stopRecording,
-  } = useKeyRecorder(shortcut?.keys || []);
+  const { keys, setKeys, recording, startRecording, stopRecording } =
+    useKeyRecorder(shortcut?.keys || []);
 
   React.useEffect(() => {
     if (recording || saving) return;
@@ -50,8 +49,7 @@ export default function AddEditShortcutModal({
   const trimmedName = name.trim();
   const isValid = trimmedName.length > 0 && keys.length > 0;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitForm = async () => {
     setTouched({ name: true, keys: true });
     if (!isValid || saving) return;
 
@@ -77,6 +75,18 @@ export default function AddEditShortcutModal({
       setError("Failed to save shortcut. Check your backend connection.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void submitForm();
+  };
+
+  const handleFormKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !recording) {
+      e.preventDefault();
+      void submitForm();
     }
   };
 
@@ -118,7 +128,11 @@ export default function AddEditShortcutModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form
+          onSubmit={handleSubmit}
+          onKeyDown={handleFormKeyDown}
+          className="flex flex-col gap-4"
+        >
           <div>
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">
               Name
@@ -188,11 +202,17 @@ export default function AddEditShortcutModal({
               </label>
               <input
                 type="text"
+                list="keybase-app-suggestions"
                 placeholder="e.g. VS Code"
                 value={app}
                 onChange={(e) => setApp(e.target.value)}
                 className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               />
+              <datalist id="keybase-app-suggestions">
+                {appSuggestions.map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">
@@ -200,11 +220,17 @@ export default function AddEditShortcutModal({
               </label>
               <input
                 type="text"
+                list="keybase-os-suggestions"
                 placeholder="e.g. Linux"
                 value={os}
                 onChange={(e) => setOs(e.target.value)}
                 className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               />
+              <datalist id="keybase-os-suggestions">
+                {osSuggestions.map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
             </div>
           </div>
 
@@ -238,26 +264,31 @@ export default function AddEditShortcutModal({
             <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
           )}
 
-          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={saving}
-              className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!isValid || saving}
-              className={`px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-all shadow-md ${
-                isValid && !saving
-                  ? "bg-blue-600 hover:bg-blue-700 hover:shadow-lg active:scale-95"
-                  : "bg-slate-400 dark:bg-slate-600 cursor-not-allowed opacity-70"
-              }`}
-            >
-              {saving ? "Saving..." : "Save Shortcut"}
-            </button>
+          <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <span className="hidden sm:inline text-xs text-slate-400">
+              Tip: Ctrl + Enter to save
+            </span>
+            <div className="flex justify-end gap-3 ml-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={saving}
+                className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!isValid || saving}
+                className={`px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-all shadow-md ${
+                  isValid && !saving
+                    ? "bg-blue-600 hover:bg-blue-700 hover:shadow-lg active:scale-95"
+                    : "bg-slate-400 dark:bg-slate-600 cursor-not-allowed opacity-70"
+                }`}
+              >
+                {saving ? "Saving..." : "Save Shortcut"}
+              </button>
+            </div>
           </div>
         </form>
       </motion.div>
