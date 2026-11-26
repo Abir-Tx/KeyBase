@@ -5,11 +5,19 @@ import { Shortcut } from "@/lib/api";
 import {
   exportShortcutsAsJson,
   exportShortcutsAsMarkdown,
+  exportShortcutsAsPdf,
   getConflictKey,
   parseImportedShortcutsJson,
 } from "@/lib/shortcuts";
 import { motion } from "framer-motion";
-import { Download, FileText, Upload, X, CheckCircle2 } from "lucide-react";
+import {
+  Download,
+  FileText,
+  FileDown,
+  Upload,
+  X,
+  CheckCircle2,
+} from "lucide-react";
 
 type ImportExportModalProps = {
   allShortcuts: Shortcut[];
@@ -34,18 +42,19 @@ export default function ImportExportModal({
   );
   const [skippedCount, setSkippedCount] = React.useState(0);
   const [importing, setImporting] = React.useState(false);
+  const [exportingPdf, setExportingPdf] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
-    if (importing) return;
+    if (importing || exportingPdf) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [importing, onClose]);
+  }, [importing, exportingPdf, onClose]);
 
   const exportTarget =
     exportScope === "filtered" ? filteredShortcuts : allShortcuts;
@@ -103,6 +112,19 @@ export default function ImportExportModal({
       setError("Failed while importing shortcuts to the backend.");
     } finally {
       setImporting(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (exportTarget.length === 0 || exportingPdf) return;
+    setExportingPdf(true);
+    setError(null);
+    try {
+      await exportShortcutsAsPdf(exportTarget);
+    } catch {
+      setError("Failed to generate PDF cheat sheet.");
+    } finally {
+      setExportingPdf(false);
     }
   };
 
@@ -178,27 +200,39 @@ export default function ImportExportModal({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <button
               type="button"
               onClick={() => exportShortcutsAsJson(exportTarget)}
               disabled={exportTarget.length === 0}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-sm font-medium transition disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-sm font-medium transition disabled:opacity-50"
             >
-              <Download size={16} className="text-blue-600 dark:text-blue-400" />
-              Export JSON ({exportTarget.length})
+              <Download size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>JSON ({exportTarget.length})</span>
             </button>
             <button
               type="button"
               onClick={() => exportShortcutsAsMarkdown(exportTarget)}
               disabled={exportTarget.length === 0}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-sm font-medium transition disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-sm font-medium transition disabled:opacity-50"
             >
               <FileText
                 size={16}
-                className="text-emerald-600 dark:text-emerald-400"
+                className="text-emerald-600 dark:text-emerald-400 shrink-0"
               />
-              Markdown Cheat Sheet
+              <span>Markdown</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={exportTarget.length === 0 || exportingPdf}
+              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-sm font-medium transition disabled:opacity-50"
+            >
+              <FileDown
+                size={16}
+                className="text-rose-600 dark:text-rose-400 shrink-0"
+              />
+              <span>{exportingPdf ? "Generating..." : "Export PDF"}</span>
             </button>
           </div>
         </div>
