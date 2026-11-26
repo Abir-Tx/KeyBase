@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import AddEditShortcutModal from "@/components/AddEditShortcutModal";
 import RecordKeysModal from "@/components/RecordKeysModal";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
+import ShortcutsHelpModal from "@/components/ShortcutsHelpModal";
+import ImportExportModal from "@/components/ImportExportModal";
 import {
   fetchShortcuts,
   addShortcut,
@@ -12,8 +14,33 @@ import {
   Shortcut,
   deleteShortcut,
 } from "@/lib/api";
+import { useShortcutFilters } from "@/lib/filter-context";
+import {
+  buildConflictMap,
+  getConflictKey,
+  parseOsList,
+} from "@/lib/shortcuts";
 import ShortcutCard from "@/components/ShortcutCard";
-import { Search, Plus, X, AlertCircle, RotateCw } from "lucide-react";
+import {
+  Search,
+  Plus,
+  X,
+  AlertCircle,
+  RotateCw,
+  HelpCircle,
+  ArrowUpDown,
+} from "lucide-react";
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    target.isContentEditable
+  );
+}
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -32,6 +59,25 @@ export default function Home() {
   const [recordModalOpen, setRecordModalOpen] = React.useState(false);
   const [deletingShortcut, setDeletingShortcut] =
     React.useState<Shortcut | null>(null);
+  const [helpOpen, setHelpOpen] = React.useState(false);
+  const [importExportOpen, setImportExportOpen] = React.useState(false);
+
+  const searchInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const {
+    setShortcutsForFilters,
+    selectedApps,
+    selectedOses,
+    selectedTags,
+    tagLogic,
+    toggleApp,
+    toggleOs,
+    toggleTag,
+    clearAllFilters,
+    hasActiveFilters,
+    appFacets,
+    osFacets,
+  } = useShortcutFilters();
 
   const loadData = React.useCallback(async () => {
     setLoading(true);
@@ -50,6 +96,53 @@ export default function Home() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  React.useEffect(() => {
+    setShortcutsForFilters(shortcuts);
+  }, [shortcuts, setShortcutsForFilters]);
+
+  const anyModalOpen =
+    modalOpen ||
+    recordModalOpen ||
+    Boolean(deletingShortcut) ||
+    helpOpen ||
+    importExportOpen;
+
+  // Global keyboard-first shortcuts
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (anyModalOpen) return;
+
+      const isCmdK = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k";
+      if (isCmdK) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+        return;
+      }
+
+      if (isTypingTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey) {
+        return;
+      }
+
+      if (e.key === "/") {
+        e.preventDefault();
+        requestAnimationFrame(() => {
+          searchInputRef.current?.focus();
+        });
+      } else if (e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        setEditingShortcut(null);
+        setModalOpen(true);
+      } else if (e.key === "?") {
+        e.preventDefault();
+        setHelpOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [anyModalOpen]);
 
   // Add/Edit Save
   const handleSave = async (sc: Shortcut) => {
@@ -98,23 +191,57 @@ export default function Home() {
     }
   };
 
-  // Filter across name, app, description, keys, os, and tags
+  // Import multiple shortcuts
+  const handleImportShortcuts = async (items: Shortcut[]): Promise<number> => {
+    const created: Shortcut[] = [];
+    for (const item of items) {
+      const saved = await addShortcut(item);
+      created.push(saved);
+    }
+    setShortcuts((prev) => [...prev, ...created]);
+    return created.length;
+  };
+
+  const conflictMap = React.useMemo(
+    () => buildConflictMap(shortcuts),
+    [shortcuts]
+  );
+
+  // Filter across search query, apps, OSes, and tags
   const q = searchQuery.trim().toLowerCase();
-  const filteredShortcuts = q
-    ? shortcuts.filter((sc) => {
-        const nameMatch = sc.name?.toLowerCase().includes(q) ?? false;
-        const appMatch = sc.app?.toLowerCase().includes(q) ?? false;
-        const descMatch = sc.description?.toLowerCase().includes(q) ?? false;
-        const osMatch = sc.os?.toLowerCase().includes(q) ?? false;
-        const keyMatch =
-          sc.keys?.some((k) => k.toLowerCase().includes(q)) ?? false;
-        const tagMatch =
-          sc.tags?.some((t) => t.toLowerCase().includes(q)) ?? false;
-        return (
-          nameMatch || appMatch || descMatch || osMatch || keyMatch || tagMatch
-        );
-      })
-    : shortcuts;
+  const filteredShortcuts = shortcuts.filter((sc) => {
+    if (selectedApps.length > 0) {
+      const appName = (sc.app || "General").toLowerCase();
+      if (!selectedApps.some((a) => a.toLowerCase() === appName)) return false;
+    }
+
+    if (selectedOses.length > 0) {
+      const scOses = parseOsList(sc.os).map((o) => o.toLowerCase());
+      if (!selectedOses.some((o) => scOses.includes(o.toLowerCase()))) {
+        return false;
+      }
+    }
+
+    if (selectedTags.length > 0) {
+      const scTags = (sc.tags || []).map((t) => t.toLowerCase());
+      const matchesTags =
+        tagLogic === "AND"
+          ? selectedTags.every((t) => scTags.includes(t.toLowerCase()))
+          : selectedTags.some((t) => scTags.includes(t.toLowerCase()));
+      if (!matchesTags) return false;
+    }
+
+    if (!q) return true;
+    const nameMatch = sc.name?.toLowerCase().includes(q) ?? false;
+    const appMatch = sc.app?.toLowerCase().includes(q) ?? false;
+    const descMatch = sc.description?.toLowerCase().includes(q) ?? false;
+    const osMatch = sc.os?.toLowerCase().includes(q) ?? false;
+    const keyMatch = sc.keys?.some((k) => k.toLowerCase().includes(q)) ?? false;
+    const tagMatch = sc.tags?.some((t) => t.toLowerCase().includes(q)) ?? false;
+    return (
+      nameMatch || appMatch || descMatch || osMatch || keyMatch || tagMatch
+    );
+  });
 
   const groupedShortcuts = filteredShortcuts.reduce(
     (groups: Record<string, Shortcut[]>, sc) => {
@@ -127,23 +254,37 @@ export default function Home() {
   );
 
   const appNames = Object.keys(groupedShortcuts);
+  const appSuggestions = appFacets.map((f) => f.label);
+  const osSuggestions = osFacets.map((f) => f.label);
 
   return (
-    <div className="flex flex-col gap-8 max-w-6xl mx-auto">
-      {/* Top Bar: Search & Add */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+    <div className="flex flex-col gap-6 max-w-6xl mx-auto">
+      {/* Top Bar: Search & Actions */}
+      <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
         <div className="relative w-full md:max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-slate-400" />
           </div>
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Search shortcuts, apps, keys, tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                if (searchQuery) {
+                  setSearchQuery("");
+                } else {
+                  e.currentTarget.blur();
+                }
+              }
+            }}
+            className="w-full pl-10 pr-16 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           />
-          {searchQuery && (
+          {searchQuery ? (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
@@ -152,21 +293,108 @@ export default function Home() {
             >
               <X size={16} />
             </button>
+          ) : (
+            <span className="hidden sm:flex absolute inset-y-0 right-3 items-center pointer-events-none">
+              <kbd className="px-1.5 py-0.5 text-[11px] font-mono rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                /
+              </kbd>
+            </span>
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setEditingShortcut(null);
-            setModalOpen(true);
-          }}
-          className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition shadow-lg hover:shadow-blue-500/25 active:scale-95 duration-200"
-        >
-          <Plus size={20} />
-          Add Shortcut
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setImportExportOpen(true)}
+            title="Backup, Export & Import"
+            aria-label="Open backup, export, and import modal"
+            className="flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium transition shadow-sm"
+          >
+            <ArrowUpDown size={17} />
+            <span className="hidden sm:inline">Import / Export</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setHelpOpen(true)}
+            title="Keyboard shortcuts (?)"
+            aria-label="Open keyboard shortcuts help"
+            className="flex items-center justify-center p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm"
+          >
+            <HelpCircle size={18} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setEditingShortcut(null);
+              setModalOpen(true);
+            }}
+            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition shadow-lg hover:shadow-blue-500/25 active:scale-95 duration-200"
+          >
+            <Plus size={20} />
+            Add Shortcut
+          </button>
+        </div>
       </div>
+
+      {/* Active Filter Chips & Result Count */}
+      {(hasActiveFilters || q.length > 0) && !loading && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-slate-500 dark:text-slate-400 font-medium mr-1">
+            Showing {filteredShortcuts.length} of {shortcuts.length}
+          </span>
+
+          {selectedApps.map((app) => (
+            <button
+              key={`app-${app}`}
+              type="button"
+              onClick={() => toggleApp(app)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-medium hover:bg-blue-200 dark:hover:bg-blue-900/60 transition"
+            >
+              <span>App: {app}</span>
+              <X size={12} />
+            </button>
+          ))}
+
+          {selectedOses.map((os) => (
+            <button
+              key={`os-${os}`}
+              type="button"
+              onClick={() => toggleOs(os)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition"
+            >
+              <span>OS: {os}</span>
+              <X size={12} />
+            </button>
+          ))}
+
+          {selectedTags.map((tag) => (
+            <button
+              key={`tag-${tag}`}
+              type="button"
+              onClick={() => toggleTag(tag)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium hover:bg-slate-300 dark:hover:bg-slate-700 transition"
+            >
+              <span>#{tag}</span>
+              <X size={12} />
+            </button>
+          ))}
+
+          {(hasActiveFilters || q.length > 0) && (
+            <button
+              type="button"
+              onClick={() => {
+                clearAllFilters();
+                setSearchQuery("");
+              }}
+              className="px-2 py-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline underline-offset-2"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Error Alert */}
       {error && (
@@ -214,9 +442,10 @@ export default function Home() {
             <p className="text-lg font-medium">
               {error ? "Unable to display shortcuts." : "No shortcuts found."}
             </p>
-            {q && (
+            {(q || hasActiveFilters) && (
               <p className="text-sm mt-1">
-                Try searching for a different keyword, key, or tag.
+                Try clearing filters or searching for a different keyword, key,
+                or tag.
               </p>
             )}
           </motion.div>
@@ -243,21 +472,28 @@ export default function Home() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {groupedShortcuts[app].map((sc) => (
-                    <ShortcutCard
-                      key={sc.id}
-                      shortcut={sc}
-                      onEditDetails={(item) => {
-                        setEditingShortcut(item);
-                        setModalOpen(true);
-                      }}
-                      onRecordKeys={(item) => {
-                        setRecordShortcut(item);
-                        setRecordModalOpen(true);
-                      }}
-                      onDelete={(item) => setDeletingShortcut(item)}
-                    />
-                  ))}
+                  {groupedShortcuts[app].map((sc) => {
+                    const isConflict =
+                      (conflictMap.get(getConflictKey(sc)) || 0) > 1;
+                    return (
+                      <ShortcutCard
+                        key={sc.id}
+                        shortcut={sc}
+                        hasConflict={isConflict}
+                        onEditDetails={(item) => {
+                          setEditingShortcut(item);
+                          setModalOpen(true);
+                        }}
+                        onRecordKeys={(item) => {
+                          setRecordShortcut(item);
+                          setRecordModalOpen(true);
+                        }}
+                        onDelete={(item) => setDeletingShortcut(item)}
+                        onFilterOs={toggleOs}
+                        onFilterTag={toggleTag}
+                      />
+                    );
+                  })}
                 </div>
               </motion.section>
             ))}
@@ -270,6 +506,8 @@ export default function Home() {
         {modalOpen && (
           <AddEditShortcutModal
             shortcut={editingShortcut}
+            appSuggestions={appSuggestions}
+            osSuggestions={osSuggestions}
             onClose={() => {
               setModalOpen(false);
               setEditingShortcut(null);
@@ -294,6 +532,18 @@ export default function Home() {
             shortcut={deletingShortcut}
             onClose={() => setDeletingShortcut(null)}
             onConfirm={handleConfirmDelete}
+          />
+        )}
+
+        {helpOpen && <ShortcutsHelpModal onClose={() => setHelpOpen(false)} />}
+
+        {importExportOpen && (
+          <ImportExportModal
+            allShortcuts={shortcuts}
+            filteredShortcuts={filteredShortcuts}
+            hasActiveFilters={hasActiveFilters || q.length > 0}
+            onImportShortcuts={handleImportShortcuts}
+            onClose={() => setImportExportOpen(false)}
           />
         )}
       </AnimatePresence>
