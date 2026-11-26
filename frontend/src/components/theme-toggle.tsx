@@ -1,24 +1,41 @@
 "use client";
 
+import * as React from "react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Moon, Sun } from "lucide-react";
 
+const emptySubscribe = () => () => {};
+
+/**
+ * Accessible light/dark theme toggle synced with resolved system theme.
+ */
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
+  const mounted = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
-  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <div
+        className="h-8 w-16 rounded-full bg-slate-200 dark:bg-slate-700"
+        aria-hidden="true"
+      />
+    );
+  }
 
-  if (!mounted) return null;
-
-  const isDark = theme === "dark";
+  const isDark = resolvedTheme === "dark";
 
   return (
-    <div
+    <button
+      type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className={`relative flex h-8 w-16 cursor-pointer items-center rounded-full px-1 transition-colors duration-300 ${
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className={`relative flex h-8 w-16 cursor-pointer items-center rounded-full px-1 transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
         isDark ? "bg-slate-700" : "bg-sky-200"
       }`}
     >
@@ -42,6 +59,6 @@ export function ThemeToggle() {
           )}
         </motion.div>
       </motion.div>
-    </div>
+    </button>
   );
 }

@@ -6,28 +6,33 @@ export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
 export type Shortcut = {
-  id?: number;
+  id?: string;
   name: string;
   keys: string[];
   app: string;
   os: string;
   description?: string;
   tags: string[];
+  created_at?: string;
+  updated_at?: string;
 };
 
 export const fetchShortcuts = async (): Promise<Shortcut[]> => {
-  const res = await axios.get(`${API_BASE}/shortcuts/`);
+  const res = await axios.get<Shortcut[]>(`${API_BASE}/shortcuts/`);
   return res.data;
 };
 
-export const addShortcut = async (shortcut: Shortcut) => {
-  const res = await axios.post(`${API_BASE}/shortcuts/`, shortcut);
+export const addShortcut = async (shortcut: Shortcut): Promise<Shortcut> => {
+  const res = await axios.post<Shortcut>(`${API_BASE}/shortcuts/`, shortcut);
   return res.data;
 };
 
-export const updateShortcut = async (shortcut: Shortcut) => {
+export const updateShortcut = async (shortcut: Shortcut): Promise<Shortcut> => {
   if (!shortcut.id) throw new Error("Shortcut ID is required for update");
-  const res = await axios.put(`${API_BASE}/shortcuts/${shortcut.id}`, shortcut);
+  const res = await axios.put<Shortcut>(
+    `${API_BASE}/shortcuts/${shortcut.id}`,
+    shortcut
+  );
   return res.data;
 };
 
