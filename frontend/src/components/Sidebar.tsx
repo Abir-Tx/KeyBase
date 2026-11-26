@@ -77,7 +77,7 @@ export default function Sidebar({ open, onOpen, onClose }: SidebarProps) {
                 rel="noreferrer"
                 className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
-                v0.11.0
+                v0.12.0
               </a>
             </div>
             <button

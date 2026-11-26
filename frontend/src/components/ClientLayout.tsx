@@ -27,7 +27,7 @@ export default function ClientLayout({
             onClose={() => setSidebarOpen(false)}
             onOpen={() => setSidebarOpen(true)}
           />
-          <main className="flex-1 px-4 py-6 md:p-8 lg:p-12 transition-all duration-300">
+          <main className="flex-1 min-w-0 px-4 py-6 md:p-8 lg:p-12 transition-all duration-300">
             <div className="flex justify-end mb-6 md:mb-8">
               <ThemeToggle />
             </div>

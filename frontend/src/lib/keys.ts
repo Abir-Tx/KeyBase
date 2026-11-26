@@ -1,6 +1,38 @@
 "use client";
 
 import * as React from "react";
+import { formatKeysText } from "./shortcuts";
+
+/**
+ * Reusable clipboard copy hook for shortcut key combinations.
+ */
+export function useCopyKeys(resetDelayMs = 1600) {
+  const [copied, setCopied] = React.useState(false);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const copyKeys = React.useCallback(
+    async (keys: string[]) => {
+      if (!keys || keys.length === 0) return;
+      try {
+        await navigator.clipboard.writeText(formatKeysText(keys));
+        setCopied(true);
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => setCopied(false), resetDelayMs);
+      } catch {
+        // Clipboard unavailable in insecure context; ignore silently
+      }
+    },
+    [resetDelayMs]
+  );
+
+  return { copied, copyKeys };
+}
 
 /**
  * Normalize a KeyboardEvent.key value for consistent display and storage.

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Shortcut } from "@/lib/api";
+import { useCopyKeys } from "@/lib/keys";
 import { formatKeysText, parseOsList } from "@/lib/shortcuts";
 import { motion } from "framer-motion";
 import {
@@ -32,30 +33,11 @@ export default function ShortcutCard({
   onFilterOs,
   onFilterTag,
 }: ShortcutCardProps) {
-  const [copied, setCopied] = React.useState(false);
-  const copyTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  React.useEffect(() => {
-    return () => {
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-    };
-  }, []);
+  const { copied, copyKeys } = useCopyKeys();
 
   const keysArray = shortcut.keys ?? [];
   const tagsArray = (shortcut.tags ?? []).filter(Boolean);
   const osList = parseOsList(shortcut.os);
-
-  const handleCopyKeys = async () => {
-    if (keysArray.length === 0) return;
-    try {
-      await navigator.clipboard.writeText(formatKeysText(keysArray));
-      setCopied(true);
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-      copyTimerRef.current = setTimeout(() => setCopied(false), 1600);
-    } catch {
-      // Clipboard unavailable in insecure context; ignore silently
-    }
-  };
 
   return (
     <motion.div
@@ -90,7 +72,7 @@ export default function ShortcutCard({
           {keysArray.length > 0 && (
             <button
               type="button"
-              onClick={handleCopyKeys}
+              onClick={() => copyKeys(keysArray)}
               className="opacity-75 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md"
               title={copied ? "Copied!" : `Copy "${formatKeysText(keysArray)}"`}
               aria-label={`Copy keys for ${shortcut.name}`}
