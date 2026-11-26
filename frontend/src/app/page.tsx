@@ -20,6 +20,14 @@ import {
   getConflictKey,
   parseOsList,
 } from "@/lib/shortcuts";
+import {
+  readViewMode,
+  writeViewMode,
+  useViewMode,
+  usePinnedIds,
+  togglePinnedId,
+  writePinnedIds,
+} from "@/lib/storage";
 import ShortcutCard from "@/components/ShortcutCard";
 import ShortcutCompactRow from "@/components/ShortcutCompactRow";
 import {
@@ -32,32 +40,8 @@ import {
   ArrowUpDown,
   LayoutGrid,
   List,
+  Pin,
 } from "lucide-react";
-
-type ViewMode = "cards" | "compact";
-const VIEW_MODE_KEY = "keybase-view-mode";
-const VIEW_MODE_EVENT = "keybase-view-mode-change";
-
-function subscribeViewMode(callback: () => void) {
-  window.addEventListener("storage", callback);
-  window.addEventListener(VIEW_MODE_EVENT, callback);
-  return () => {
-    window.removeEventListener("storage", callback);
-    window.removeEventListener(VIEW_MODE_EVENT, callback);
-  };
-}
-
-function getViewModeSnapshot(): ViewMode {
-  if (typeof window === "undefined") return "cards";
-  return window.localStorage.getItem(VIEW_MODE_KEY) === "compact"
-    ? "compact"
-    : "cards";
-}
-
-function saveViewMode(mode: ViewMode) {
-  window.localStorage.setItem(VIEW_MODE_KEY, mode);
-  window.dispatchEvent(new Event(VIEW_MODE_EVENT));
-}
 
 function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -91,11 +75,8 @@ export default function Home() {
   const [importExportOpen, setImportExportOpen] = React.useState(false);
 
   const searchInputRef = React.useRef<HTMLInputElement | null>(null);
-  const viewMode = React.useSyncExternalStore(
-    subscribeViewMode,
-    getViewModeSnapshot,
-    () => "cards"
-  );
+  const viewMode = useViewMode();
+  const pinnedIds = usePinnedIds();
 
   const {
     setShortcutsForFilters,
@@ -154,6 +135,21 @@ export default function Home() {
         return;
       }
 
+      if (
+        e.key === "Escape" &&
+        searchInputRef.current &&
+        document.activeElement === searchInputRef.current
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (searchInputRef.current.value) {
+          setSearchQuery("");
+        } else {
+          searchInputRef.current.blur();
+        }
+        return;
+      }
+
       if (isTypingTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey) {
         return;
       }
@@ -169,18 +165,18 @@ export default function Home() {
         setModalOpen(true);
       } else if (e.key.toLowerCase() === "v") {
         e.preventDefault();
-        saveViewMode(getViewModeSnapshot() === "cards" ? "compact" : "cards");
+        writeViewMode(readViewMode() === "cards" ? "compact" : "cards");
       } else if (e.key === "?") {
         e.preventDefault();
         setHelpOpen(true);
       }
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [anyModalOpen]);
 
-  // Add/Edit Save
+  // Add/Edit/Clone Save
   const handleSave = async (sc: Shortcut) => {
     const payload: Shortcut = {
       ...sc,
@@ -199,6 +195,25 @@ export default function Home() {
       setShortcuts((prev) => [...prev, newSc]);
     }
     setEditingShortcut(null);
+  };
+
+  // Clone template (no ID -> creates new shortcut)
+  const handleClone = (sc: Shortcut) => {
+    setEditingShortcut({
+      name: `${sc.name} (Copy)`,
+      keys: [...(sc.keys || [])],
+      app: sc.app,
+      os: sc.os,
+      description: sc.description || "",
+      tags: [...(sc.tags || [])],
+    });
+    setModalOpen(true);
+  };
+
+  // Pin / Unpin shortcut
+  const handleTogglePin = (sc: Shortcut) => {
+    if (!sc.id) return;
+    togglePinnedId(sc.id);
   };
 
   // Record Keys Save
@@ -220,6 +235,9 @@ export default function Home() {
     try {
       await deleteShortcut(shortcut);
       setShortcuts((prev) => prev.filter((s) => s.id !== shortcut.id));
+      if (pinnedIds.includes(shortcut.id)) {
+        writePinnedIds(pinnedIds.filter((id) => id !== shortcut.id));
+      }
     } catch (err) {
       console.error("Failed to delete shortcut", err);
       setError(`Failed to delete "${shortcut.name}". Please try again.`);
@@ -279,6 +297,11 @@ export default function Home() {
     );
   });
 
+  const pinnedSet = new Set(pinnedIds);
+  const pinnedShortcuts = filteredShortcuts.filter(
+    (sc) => sc.id && pinnedSet.has(sc.id)
+  );
+
   const groupedShortcuts = filteredShortcuts.reduce(
     (groups: Record<string, Shortcut[]>, sc) => {
       const appName = sc.app || "General";
@@ -292,6 +315,48 @@ export default function Home() {
   const appNames = Object.keys(groupedShortcuts);
   const appSuggestions = appFacets.map((f) => f.label);
   const osSuggestions = osFacets.map((f) => f.label);
+
+  const renderShortcutCollection = (
+    items: Shortcut[],
+    keyPrefix: string,
+    showAppBadge = false
+  ) => (
+    <div
+      className={
+        viewMode === "compact"
+          ? "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm divide-y divide-slate-100 dark:divide-slate-700/60 overflow-hidden"
+          : "grid grid-cols-1 md:grid-cols-2 gap-6"
+      }
+    >
+      {items.map((sc) => {
+        const ItemComponent =
+          viewMode === "compact" ? ShortcutCompactRow : ShortcutCard;
+        const isPinned = Boolean(sc.id && pinnedSet.has(sc.id));
+        return (
+          <ItemComponent
+            key={`${keyPrefix}-${sc.id}`}
+            shortcut={sc}
+            hasConflict={(conflictMap.get(getConflictKey(sc)) || 0) > 1}
+            isPinned={isPinned}
+            showAppBadge={showAppBadge}
+            onEditDetails={(item) => {
+              setEditingShortcut(item);
+              setModalOpen(true);
+            }}
+            onRecordKeys={(item) => {
+              setRecordShortcut(item);
+              setRecordModalOpen(true);
+            }}
+            onClone={handleClone}
+            onTogglePin={handleTogglePin}
+            onDelete={(item) => setDeletingShortcut(item)}
+            onFilterOs={toggleOs}
+            onFilterTag={toggleTag}
+          />
+        );
+      })}
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto">
@@ -307,17 +372,6 @@ export default function Home() {
             placeholder="Search shortcuts, apps, keys, tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                e.preventDefault();
-                e.stopPropagation();
-                if (searchQuery) {
-                  setSearchQuery("");
-                } else {
-                  e.currentTarget.blur();
-                }
-              }
-            }}
             className="w-full pl-10 pr-16 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           />
           {searchQuery ? (
@@ -346,7 +400,7 @@ export default function Home() {
           >
             <button
               type="button"
-              onClick={() => saveViewMode("cards")}
+              onClick={() => writeViewMode("cards")}
               aria-pressed={viewMode === "cards"}
               title="Cards view (v)"
               aria-label="Cards view"
@@ -360,7 +414,7 @@ export default function Home() {
             </button>
             <button
               type="button"
-              onClick={() => saveViewMode("compact")}
+              onClick={() => writeViewMode("compact")}
               aria-pressed={viewMode === "compact"}
               title="Compact cheat-sheet view (v)"
               aria-label="Compact cheat-sheet view"
@@ -522,6 +576,43 @@ export default function Home() {
           </motion.div>
         ) : (
           <div className="flex flex-col gap-10">
+            {/* Pinned / Learning Section */}
+            {pinnedShortcuts.length > 0 && (
+              <motion.section
+                key="pinned-learning"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15 }}
+                className="flex flex-col gap-4"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-1.5 h-6 bg-amber-500 rounded-full" />
+                    <Pin
+                      size={17}
+                      className="text-amber-500 fill-amber-500 shrink-0"
+                    />
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-amber-400">
+                      Pinned / Learning
+                    </h2>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                      {pinnedShortcuts.length}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => writePinnedIds([])}
+                    className="text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline underline-offset-2"
+                  >
+                    Unpin all
+                  </button>
+                </div>
+
+                {renderShortcutCollection(pinnedShortcuts, "pinned", true)}
+              </motion.section>
+            )}
+
+            {/* App Sections */}
             {appNames.map((app) => (
               <motion.section
                 key={app}
@@ -542,40 +633,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div
-                  className={
-                    viewMode === "compact"
-                      ? "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm divide-y divide-slate-100 dark:divide-slate-700/60 overflow-hidden"
-                      : "grid grid-cols-1 md:grid-cols-2 gap-6"
-                  }
-                >
-                  {groupedShortcuts[app].map((sc) => {
-                    const ItemComponent =
-                      viewMode === "compact"
-                        ? ShortcutCompactRow
-                        : ShortcutCard;
-                    return (
-                      <ItemComponent
-                        key={sc.id}
-                        shortcut={sc}
-                        hasConflict={
-                          (conflictMap.get(getConflictKey(sc)) || 0) > 1
-                        }
-                        onEditDetails={(item) => {
-                          setEditingShortcut(item);
-                          setModalOpen(true);
-                        }}
-                        onRecordKeys={(item) => {
-                          setRecordShortcut(item);
-                          setRecordModalOpen(true);
-                        }}
-                        onDelete={(item) => setDeletingShortcut(item)}
-                        onFilterOs={toggleOs}
-                        onFilterTag={toggleTag}
-                      />
-                    );
-                  })}
-                </div>
+                {renderShortcutCollection(groupedShortcuts[app], `app-${app}`)}
               </motion.section>
             ))}
           </div>

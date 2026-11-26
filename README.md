@@ -6,6 +6,14 @@ A self-hosted keyboard shortcut manager to store, search, and organize shortcuts
 - **Backend:** FastAPI, SQLAlchemy, Alembic, PostgreSQL
 - **Docker Hub:** [`abirtx/keybase-frontend`](https://hub.docker.com/r/abirtx/keybase-frontend) | [`abirtx/keybase-backend`](https://hub.docker.com/r/abirtx/keybase-backend)
 
+## Features (`v1.0.0`)
+
+- **Instant Search & Faceted Filtering:** Search across names, apps, keys, OSes, tags, and descriptions; filter via the sidebar or clickable card pills (with `OR`/`AND` tag logic).
+- **Cards & Compact Cheat-Sheet Views:** Switch between the visual 2-column grid and dense single-row view (`v` shortcut), persisted locally.
+- **Pinned / Learning Section:** Pin shortcuts locally to keep active bindings you are memorizing at the top.
+- **Keyboard-First Workflow:** `/` or `Ctrl+K` to search, `n` to add, `v` to switch view, `?` for keyboard help, `Esc` to clear/close, and one-click key copy or shortcut cloning.
+- **Backup & Export:** Export to **JSON**, **Markdown**, or **PDF** cheat sheet (all or filtered), plus duplicate-safe JSON import.
+
 ---
 
 ## Shortcut Data Model
@@ -131,7 +139,7 @@ Multi-arch images cannot be loaded as a single local image into the standard Doc
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   -t abirtx/keybase-backend:latest \
-  -t abirtx/keybase-backend:v0.9.0 \
+  -t abirtx/keybase-backend:v1.0.0 \
   --push \
   ./backend
 ```
@@ -141,7 +149,7 @@ docker buildx build \
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   -t abirtx/keybase-frontend:latest \
-  -t abirtx/keybase-frontend:v0.9.0 \
+  -t abirtx/keybase-frontend:v1.0.0 \
   --push \
   ./frontend
 ```
