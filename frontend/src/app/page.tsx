@@ -15,19 +15,6 @@ import {
 import ShortcutCard from "@/components/ShortcutCard";
 import { Search, Plus, X, AlertCircle, RotateCw } from "lucide-react";
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.04 },
-  },
-};
-
-const itemVariants = {
-  hidden: { y: 16, opacity: 0 },
-  visible: { y: 0, opacity: 1 },
-};
-
 export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [shortcuts, setShortcuts] = React.useState<Shortcut[]>([]);
@@ -234,16 +221,13 @@ export default function Home() {
             )}
           </motion.div>
         ) : (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="flex flex-col gap-10"
-          >
+          <div className="flex flex-col gap-10">
             {appNames.map((app) => (
               <motion.section
                 key={app}
-                variants={itemVariants}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15 }}
                 className="flex flex-col gap-4"
               >
                 <div className="flex items-center justify-between">
@@ -277,7 +261,7 @@ export default function Home() {
                 </div>
               </motion.section>
             ))}
-          </motion.div>
+          </div>
         )}
       </div>
 
