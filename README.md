@@ -1,4 +1,6 @@
-# KeyBase
+<p align=center><img width="256" height="256" alt="image" src="https://github.com/user-attachments/assets/c651bc69-dc30-449c-856a-fe0d9c6ba5eb" /></p>
+
+<h1 align=center>KeyBase</h1>
 
 A self-hosted keyboard shortcut manager to store, search, and organize shortcuts across apps and operating systems.
 
